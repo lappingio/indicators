@@ -266,7 +266,7 @@ if isNewDayStart
         label.delete(fibNeg786Label)
         fibNeg786Label := na
     // Delete all FVGs
-    for i = array.size(fvgArray) - 1 to 0
+    for i = array.size(fvgArray) - 1 to 0 by -1
         currentFVG = array.get(fvgArray, i)
         box.delete(currentFVG.fvgBox)
         line.delete(currentFVG.midLine)
@@ -943,7 +943,7 @@ if showFVG and timeframe.isintraday and timeframe.multiplier <= 15
             array.push(fvgArray, newFVG)
     
     // Update existing FVGs for mitigation and midpoint breach
-    for i = array.size(fvgArray) - 1 to 0
+    for i = array.size(fvgArray) - 1 to 0 by -1
         currentFVG = array.get(fvgArray, i)
         
         if not currentFVG.mitigated
