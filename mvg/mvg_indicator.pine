@@ -1,15 +1,13 @@
 //@version=6
-indicator("Max Value Gap (MVG) Indicator", overlay=true, max_boxes_count=500, max_labels_count=500)
+indicator("MVG", overlay=true, max_boxes_count=500, max_labels_count=500)
 
 // Input parameters
-maxGapsToTrack = input.int(100, "Maximum Gaps to Track", minval=10, maxval=500)
 showTable = input.bool(true, "Show Statistics Table")
 tableTextSize = input.string("normal", "Table Text Size", options=["tiny", "small", "normal", "large"])
 
 // Colors
 gapColor = input.color(color.new(color.blue, 80), "Gap Rectangle Color")
-tableHeaderColor = input.color(color.new(color.blue, 20), "Table Header Color")
-tableRowColor = input.color(color.new(color.white, 90), "Table Row Color")
+tableHeaderColor = input.color(color.new(color.white, 0), "Table Header Color")
 
 // Gap tracking arrays
 var gapBoxes = array.new<box>()
@@ -105,20 +103,6 @@ if detectGap() and barstate.isconfirmed
                          extend=extend.right)
         
         // Store gap information
-        if array.size(gapBoxes) >= maxGapsToTrack
-            // Remove oldest gap (but keep its statistics if it was filled)
-            oldBox = array.shift(gapBoxes)
-            box.delete(oldBox)
-            array.shift(gapHighs)
-            array.shift(gapLows)
-            array.shift(gapStartTimes)
-            array.shift(gapDates)
-            array.shift(gapFilled)
-            array.shift(gapTypes)
-            array.shift(gapFillLevels)
-            array.shift(gapBarsToFill)
-            array.shift(gapStartBarIndex)
-        
         array.push(gapBoxes, gapBox)
         array.push(gapHighs, gapHigh)
         array.push(gapLows, gapLow)
@@ -193,77 +177,89 @@ if barstate.isconfirmed and array.size(gapBoxes) > 0
 if showTable and barstate.islast
     // Create table
     statsTable = table.new(position.bottom_right, 3, 4, 
-                           bgcolor=color.new(color.black, 95),
-                           frame_color=color.new(color.gray, 50),
-                           frame_width=1)
+                           bgcolor=color.new(color.black, 0),
+                           frame_color=color.new(color.black, 0),
+                           frame_width=2,
+                           border_color=color.new(color.black, 0),
+                           border_width=1)
     
     // Table headers
     table.cell(statsTable, 0, 0, "Gap Fill Statistics", 
-              text_color=color.white, bgcolor=tableHeaderColor, 
-              text_size=tableTextSize)
+              text_color=color.black, bgcolor=tableHeaderColor, 
+              text_size=tableTextSize, text_halign=text.align_left)
     table.cell(statsTable, 1, 0, "Count", 
-              text_color=color.white, bgcolor=tableHeaderColor, 
-              text_size=tableTextSize)
+              text_color=color.black, bgcolor=tableHeaderColor, 
+              text_size=tableTextSize, text_halign=text.align_right)
     table.cell(statsTable, 2, 0, "% Filled", 
-              text_color=color.white, bgcolor=tableHeaderColor, 
-              text_size=tableTextSize)
+              text_color=color.black, bgcolor=tableHeaderColor, 
+              text_size=tableTextSize, text_halign=text.align_right)
     
-    // Row 1: Gaps filled today
+    // Row 1: Gaps filled today (purple)
     todayFillPct = gapsCreatedToday > 0 ? (gapsFilledToday / gapsCreatedToday) * 100 : 0
+    todayRowColor = todayFillPct == 100 ? color.new(color.green, 30) : color.new(color.purple, 70)
+    todayTextColor = color.white
     table.cell(statsTable, 0, 1, "Gaps Filled Today", 
-              text_color=color.white, bgcolor=tableRowColor, 
-              text_size=tableTextSize)
+              text_color=todayTextColor, bgcolor=todayRowColor, 
+              text_size=tableTextSize, text_halign=text.align_left)
     table.cell(statsTable, 1, 1, str.tostring(gapsFilledToday) + "/" + str.tostring(gapsCreatedToday), 
-              text_color=color.white, bgcolor=tableRowColor, 
-              text_size=tableTextSize)
+              text_color=todayTextColor, bgcolor=todayRowColor, 
+              text_size=tableTextSize, text_halign=text.align_right)
     table.cell(statsTable, 2, 1, str.tostring(todayFillPct, "#.##") + "%", 
-              text_color=color.white, bgcolor=tableRowColor, 
-              text_size=tableTextSize)
+              text_color=todayTextColor, bgcolor=todayRowColor, 
+              text_size=tableTextSize, text_halign=text.align_right)
     
-    // Row 2: Same day fills
+    // Row 2: Same day fills (gray for alternating)
     sameDayFillPct = sameDayGaps > 0 ? (sameDayFills / sameDayGaps) * 100 : 0
+    sameDayRowColor = sameDayFillPct == 100 ? color.new(color.green, 30) : color.new(color.gray, 80)
+    sameDayTextColor = color.white
     table.cell(statsTable, 0, 2, "Gaps Filled Same Day", 
-              text_color=color.white, bgcolor=tableRowColor, 
-              text_size=tableTextSize)
+              text_color=sameDayTextColor, bgcolor=sameDayRowColor, 
+              text_size=tableTextSize, text_halign=text.align_left)
     table.cell(statsTable, 1, 2, str.tostring(sameDayFills) + "/" + str.tostring(sameDayGaps), 
-              text_color=color.white, bgcolor=tableRowColor, 
-              text_size=tableTextSize)
+              text_color=sameDayTextColor, bgcolor=sameDayRowColor, 
+              text_size=tableTextSize, text_halign=text.align_right)
     table.cell(statsTable, 2, 2, str.tostring(sameDayFillPct, "#.##") + "%", 
-              text_color=color.white, bgcolor=tableRowColor, 
-              text_size=tableTextSize)
+              text_color=sameDayTextColor, bgcolor=sameDayRowColor, 
+              text_size=tableTextSize, text_halign=text.align_right)
     
-    // Row 3: Total fills
+    // Row 3: Total fills (purple again for alternating)
     totalFillPct = totalGapsCreated > 0 ? (totalGapsFilled / totalGapsCreated) * 100 : 0
+    totalRowColor = totalFillPct == 100 ? color.new(color.green, 30) : color.new(color.purple, 70)
+    totalTextColor = color.white
     table.cell(statsTable, 0, 3, "Gaps Filled Total", 
-              text_color=color.white, bgcolor=tableRowColor, 
-              text_size=tableTextSize)
+              text_color=totalTextColor, bgcolor=totalRowColor, 
+              text_size=tableTextSize, text_halign=text.align_left)
     table.cell(statsTable, 1, 3, str.tostring(totalGapsFilled) + "/" + str.tostring(totalGapsCreated), 
-              text_color=color.white, bgcolor=tableRowColor, 
-              text_size=tableTextSize)
+              text_color=totalTextColor, bgcolor=totalRowColor, 
+              text_size=tableTextSize, text_halign=text.align_right)
     table.cell(statsTable, 2, 3, str.tostring(totalFillPct, "#.##") + "%", 
-              text_color=color.white, bgcolor=tableRowColor, 
-              text_size=tableTextSize)
+              text_color=totalTextColor, bgcolor=totalRowColor, 
+              text_size=tableTextSize, text_halign=text.align_right)
 
-// Alert conditions for better alert dialog
-gapCreatedCondition = detectGap() and barstate.isconfirmed
-gapFilledThisBar = false
+// Alert tracking variables
+var bool gapFilledThisBar = false
+gapFilledThisBar := false
 
-// Track if a gap was filled on this specific bar
-for i = 0 to array.size(gapBoxes) - 1
-    if i < array.size(gapFilled) and not array.get(gapFilled, i)
-        gapIsUp = array.get(gapTypes, i)
-        gapHighLevel = array.get(gapHighs, i)
-        gapLowLevel = array.get(gapLows, i)
-        
-        if gapIsUp
-            if low < gapLowLevel
+// Check if any gap was filled on this bar
+if barstate.isconfirmed and array.size(gapBoxes) > 0
+    for i = 0 to array.size(gapBoxes) - 1
+        if i < array.size(gapFilled) and not array.get(gapFilled, i)
+            gapIsUp = array.get(gapTypes, i)
+            gapHighLevel = array.get(gapHighs, i)
+            gapLowLevel = array.get(gapLows, i)
+            
+            if gapIsUp and low < gapLowLevel
                 gapFilledThisBar := true
-        else
-            if high > gapHighLevel
+            else if not gapIsUp and high > gapHighLevel
                 gapFilledThisBar := true
 
-// Create alert conditions that show up in the alert dialog
-alertcondition(gapCreatedCondition, title="Gap Created", message="New gap detected: {{ticker}} at {{close}}")
+// Alert conditions
+newGapDetected = detectGap() and barstate.isconfirmed
+gapUpDetected = newGapDetected and low > high[1]
+gapDownDetected = newGapDetected and high < low[1]
+
+// Create alert conditions
+alertcondition(newGapDetected, title="Gap Created", message="New gap detected: {{ticker}} at {{close}}")
 alertcondition(gapFilledThisBar, title="Gap Filled", message="Gap filled: {{ticker}} at {{close}}")
-alertcondition(gapCreatedCondition and low > high[1], title="Gap Up Created", message="Gap UP created: {{ticker}} at {{close}}")
-alertcondition(gapCreatedCondition and high < low[1], title="Gap Down Created", message="Gap DOWN created: {{ticker}} at {{close}}")
+alertcondition(gapUpDetected, title="Gap Up Created", message="Gap UP created: {{ticker}} at {{close}}")
+alertcondition(gapDownDetected, title="Gap Down Created", message="Gap DOWN created: {{ticker}} at {{close}}")
