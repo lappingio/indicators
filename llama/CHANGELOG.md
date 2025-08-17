@@ -1,5 +1,20 @@
 # Llama Strategy Indicator Changelog
 
+## [1.1.0] - 2025-01-17
+
+### Added
+- **Level Lines**: 12 different horizontal support/resistance levels
+  - Current Day Open (6pm ET)
+  - True Day Open (12am ET)
+  - Previous Day High/Low
+  - Previous Week High/Low
+  - Current Week High/Low
+  - Yearly High/Low
+  - Asia Session High/Low
+- **Breach Detection**: Lines automatically terminate when price crosses them
+- **Dotted Line Style**: All level lines use dotted style for clear identification
+- **Configurable Display**: Individual toggles and colors for each level type
+
 ## [1.0.0] - 2025-01-17
 
 ### Initial Release

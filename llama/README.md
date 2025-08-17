@@ -24,6 +24,23 @@ After the Asia session ends, the indicator automatically draws Fibonacci retrace
 - -0.236 (23.6% extension)
 - -0.786 (78.6% extension)
 
+### Level Lines
+The indicator draws horizontal level lines that extend to the right and terminate when breached by price:
+- **Current Day Open**: Opens at 6pm ET (forex day start)
+- **True Day Open**: Opens at midnight (12am ET)
+- **Previous Day High/Low**: Yesterday's high and low levels
+- **Previous Week High/Low**: Last week's high and low levels
+- **Current Week High/Low**: Current week's developing high and low
+- **Yearly High/Low**: Current year's high and low levels
+- **Asia Session High/Low**: High and low from the most recent Asia session
+
+All level lines:
+- Display as dotted lines for easy identification
+- Extend to the right until price breaches them
+- Terminate at the breach point
+- Reset daily at 6pm ET
+- Have customizable colors and optional labels
+
 ## Usage
 
 1. Add the indicator to your TradingView chart
@@ -47,6 +64,12 @@ After the Asia session ends, the indicator automatically draws Fibonacci retrace
 - Customize text size
 - Adjust box border width
 - Configure label colors
+
+### Level Lines
+- Toggle individual level lines on/off
+- Configure colors for each level type
+- Show/hide level labels
+- Adjust line width
 
 ## Trading Strategy
 
