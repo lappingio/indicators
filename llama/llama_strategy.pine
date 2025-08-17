@@ -1,5 +1,5 @@
 //@version=6
-indicator("Llama Strategy", overlay=true, max_boxes_count=500)
+indicator("Llama P2P", overlay=true, max_boxes_count=500)
 
 // Input parameters
 showSydney = input.bool(false, "Show Sydney Session", group="Sessions")

@@ -1,6 +1,9 @@
-# Llama Strategy Indicator Changelog
+# Llama P2P Indicator Changelog
 
 ## [1.4.3] - 2025-01-17
+
+### Changed
+- **Indicator Name**: Renamed from "Llama Strategy" to "Llama P2P"
 
 ### Fixed
 - **Session Label Format**: Session level labels now show decimal prices instead of "price" text
