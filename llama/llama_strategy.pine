@@ -690,14 +690,16 @@ drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText,
 [prevDayHigh, prevDayLow] = request.security(syminfo.tickerid, "D", [high[1], low[1]], lookahead=barmerge.lookahead_on)
 
 // Get weekly data
-[weeklyHigh, weeklyLow] = request.security(syminfo.tickerid, "W", [high, low], lookahead=barmerge.lookahead_on)
+// For current week, use lookahead_off to get real-time updating values
+[weeklyHigh, weeklyLow] = request.security(syminfo.tickerid, "W", [high, low], lookahead=barmerge.lookahead_off)
 [prevWeekHigh, prevWeekLow] = request.security(syminfo.tickerid, "W", [high[1], low[1]], lookahead=barmerge.lookahead_on)
 
 // Get monthly data
 [prevMonthHigh, prevMonthLow] = request.security(syminfo.tickerid, "M", [high[1], low[1]], lookahead=barmerge.lookahead_on)
 
 // Get yearly data
-[yearlyHighVal, yearlyLowVal] = request.security(syminfo.tickerid, "12M", [high, low], lookahead=barmerge.lookahead_on)
+// For current year, use lookahead_off to get real-time updating values
+[yearlyHighVal, yearlyLowVal] = request.security(syminfo.tickerid, "12M", [high, low], lookahead=barmerge.lookahead_off)
 
 // Track when new periods start
 var float lastPrevDayHigh = na

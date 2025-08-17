@@ -6,6 +6,10 @@
 - **Session Label Format**: Session level labels now show decimal prices instead of "price" text
   - Asia and London session labels now match other level label formatting
   - Both active and breached session labels use consistent decimal format
+- **Current Week High/Low**: Fixed real-time updating for current week levels
+  - Changed to `lookahead_off` for current week and year data
+  - Levels now update as new highs/lows are made during the week
+  - Yearly high/low also updates in real-time
 
 ## [1.4.2] - 2025-01-17
 
