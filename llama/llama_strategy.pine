@@ -591,13 +591,17 @@ drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startB
     var label localLabel = labelVar
     
     if condition and not na(level)
+        // Limit how far back we can draw (Pine Script limitation)
+        maxBarsBack = 500
+        safeStartIndex = math.max(startBarIndex, bar_index - maxBarsBack + 1)
+        
         // Update existing line or create new one
         if not na(localLine)
             // Just update the right side of existing line
             line.set_x2(localLine, bar_index + 1)
         else
-            // Create new line from the start bar index
-            localLine := line.new(startBarIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
+            // Create new line from the safe start bar index
+            localLine := line.new(safeStartIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
         
         // Handle label
         if showLevelLabels
@@ -616,13 +620,17 @@ drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText,
     var label localLabel = labelVar
     
     if condition and not na(level) and not breached
+        // Limit how far back we can draw (Pine Script limitation)
+        maxBarsBack = 500
+        safeStartIndex = math.max(startBarIndex, bar_index - maxBarsBack + 1)
+        
         // Update existing line or create new one
         if not na(localLine)
             // Just update the right side of existing line
             line.set_x2(localLine, bar_index + 1)
         else
-            // Create new line from the start bar index
-            localLine := line.new(startBarIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
+            // Create new line from the safe start bar index
+            localLine := line.new(safeStartIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
         
         // Handle label
         if showLevelLabels
