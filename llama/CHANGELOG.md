@@ -7,7 +7,7 @@
   - Asia and London session labels now match other level label formatting
   - Both active and breached session labels use consistent decimal format
 - **Current Week High/Low**: Fixed real-time updating for current week levels
-  - Manually track current week high/low for real-time updates
+  - Use `lookahead_off` for current week and year to get real-time values
   - Lines and labels now update Y position when levels change
   - Levels properly recalculate as new highs/lows are made
 
