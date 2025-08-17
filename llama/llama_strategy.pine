@@ -10,7 +10,7 @@ showSessionLabels = input.bool(true, "Show Session Labels", group="Sessions")
 // Session times (in exchange timezone, will convert to ET)
 sydneySession = input.session("1800-0300", "Sydney Session (6pm-3am ET)", group="Session Times")
 asiaSession = input.session("2000-0500", "Asia Session (8pm-5am ET)", group="Session Times")
-londonSession = input.session("0300-1200", "London Session (3am-12pm ET)", group="Session Times") 
+londonSession = input.session("0300-0500", "London Session (3am-5am ET)", group="Session Times") 
 
 // Visual settings
 sydneyColor = input.color(color.new(color.yellow, 80), "Sydney Session Color", group="Colors")
