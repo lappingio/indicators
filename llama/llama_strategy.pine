@@ -86,7 +86,8 @@ londonLowColor = input.color(color.new(color.purple, 0), "London Low", group="Le
 showFVG = input.bool(true, "Show Fair Value Gaps", group="Fair Value Gaps")
 fvgBullishColor = input.color(color.new(color.purple, 80), "Bullish FVG Color", group="Fair Value Gaps")
 fvgBearishColor = input.color(color.new(color.fuchsia, 80), "Bearish FVG Color", group="Fair Value Gaps")
-fvgMidlineColor = input.color(color.new(color.white, 50), "FVG Midpoint Color", group="Fair Value Gaps")
+fvgMidlineColor = input.color(color.new(color.white, 0), "FVG Midpoint Color", group="Fair Value Gaps")
+fvgMidlineWidth = input.int(2, "FVG Midpoint Width", minval=1, maxval=5, group="Fair Value Gaps")
 maxFVGs = input.int(20, "Maximum FVGs to Display", minval=1, maxval=50, group="Fair Value Gaps")
 fvgMinSize = input.float(0.0001, "Minimum FVG Size (in price)", minval=0.0, group="Fair Value Gaps")
 
@@ -913,7 +914,7 @@ if showFVG and is15MinBar
             
             // Create box and midline
             newFVG.fvgBox := box.new(bar_index, bullishGapTop, bar_index + 1, bullishGapBottom, bgcolor=fvgBullishColor, border_color=na, extend=extend.right)
-            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, color=fvgMidlineColor, width=1, style=line.style_dotted, extend=extend.right)
+            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, color=fvgMidlineColor, width=fvgMidlineWidth, style=line.style_solid, extend=extend.right)
             
             // Add to array (manage max count)
             if array.size(fvgArray) >= maxFVGs
@@ -936,7 +937,7 @@ if showFVG and is15MinBar
             
             // Create box and midline
             newFVG.fvgBox := box.new(bar_index, bearishGapTop, bar_index + 1, bearishGapBottom, bgcolor=fvgBearishColor, border_color=na, extend=extend.right)
-            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, color=fvgMidlineColor, width=1, style=line.style_dotted, extend=extend.right)
+            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, color=fvgMidlineColor, width=fvgMidlineWidth, style=line.style_solid, extend=extend.right)
             
             // Add to array (manage max count)
             if array.size(fvgArray) >= maxFVGs

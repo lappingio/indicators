@@ -4,6 +4,8 @@
 
 ### Changed
 - **FVG Persistence**: FVGs no longer reset at 6pm ET - they persist until mitigated
+- **FVG Midpoint Lines**: Changed to bright white solid lines (opacity 0) for better visibility
+- **FVG Midpoint Width**: Added configurable width setting (default: 2)
 
 ## [1.4.0] - 2025-01-17
 
