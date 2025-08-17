@@ -972,18 +972,16 @@ if showFVG and is15MinBar
                         boxLeft = box.get_left(currentFVG.fvgBox)
                         boxTop = box.get_top(currentFVG.fvgBox)
                         boxBottom = box.get_bottom(currentFVG.fvgBox)
-                        boxColor = box.get_bgcolor(currentFVG.fvgBox)
+                        // Use the appropriate color based on FVG type
+                        boxColor = currentFVG.isBullish ? fvgBullishColor : fvgBearishColor
                         box.delete(currentFVG.fvgBox)
                         currentFVG.fvgBox := box.new(boxLeft, boxTop, bar_index, boxBottom, bgcolor=boxColor, border_color=na, extend=extend.none)
                         
                         // Delete and recreate the midline without extension
                         lineLeft = line.get_x1(currentFVG.midLine)
                         lineY = line.get_y1(currentFVG.midLine)
-                        lineColor = line.get_color(currentFVG.midLine)
-                        lineWidth = line.get_width(currentFVG.midLine)
-                        lineStyle = line.get_style(currentFVG.midLine)
                         line.delete(currentFVG.midLine)
-                        currentFVG.midLine := line.new(lineLeft, lineY, bar_index, lineY, color=lineColor, width=lineWidth, style=lineStyle, extend=extend.none)
+                        currentFVG.midLine := line.new(lineLeft, lineY, bar_index, lineY, color=fvgMidlineColor, width=fvgMidlineWidth, style=line.style_solid, extend=extend.none)
                 // Note: If midpoint was already breached, we don't update the box anymore
                 // The box stays frozen at the breach point
                 
