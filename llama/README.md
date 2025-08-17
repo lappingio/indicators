@@ -64,7 +64,9 @@ The indicator automatically detects and displays Fair Value Gaps from the 15-min
 
 #### FVG Behavior:
 - Initially extends to the right indefinitely
-- **Midpoint Breach**: When price touches the midpoint, the box stops extending and freezes at that point
+- **Midpoint Breach**: When any candle's wick or body touches the midpoint, the box stops extending and freezes at that point
+  - Bullish FVG: Breached when low (including wick) touches or goes below midpoint
+  - Bearish FVG: Breached when high (including wick) touches or goes above midpoint
 - **Full Mitigation**: FVG is completely removed only when price fully passes through the entire gap
   - Bullish FVG: Mitigated when price trades below the bottom of the gap
   - Bearish FVG: Mitigated when price trades above the top of the gap

@@ -1,5 +1,13 @@
 # Llama Strategy Indicator Changelog
 
+## [1.4.2] - 2025-01-17
+
+### Fixed
+- **FVG Midpoint Breach**: Fixed critical issue where FVG boxes continued extending after midpoint was breached
+  - Moved breach detection logic outside 15-minute conditional so it runs on every bar
+  - Now properly detects breach immediately when any candle's wick or body touches midpoint
+  - Box freezes at the exact bar where breach occurred
+
 ## [1.4.1] - 2025-01-17
 
 ### Changed

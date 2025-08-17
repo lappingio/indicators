@@ -945,58 +945,57 @@ if showFVG and is15MinBar
                 box.delete(oldestFVG.fvgBox)
                 line.delete(oldestFVG.midLine)
             array.push(fvgArray, newFVG)
-    
-    // Update existing FVGs for mitigation and midpoint breach
-    // Create a temporary array to track FVGs to remove
-    var array<int> toRemove = array.new<int>()
-    array.clear(toRemove)
-    
-    if array.size(fvgArray) > 0
-        for i = 0 to array.size(fvgArray) - 1
-            currentFVG = array.get(fvgArray, i)
-            
-            if not currentFVG.mitigated
-                // First check for midpoint breach (stop extending to the right)
-                if not currentFVG.midpointBreached
-                    if currentFVG.isBullish
-                        // Bullish FVG midpoint breached when price goes below midpoint
-                        if low <= currentFVG.midpoint
-                            currentFVG.midpointBreached := true
-                            box.set_extend(currentFVG.fvgBox, extend.none)
-                            box.set_right(currentFVG.fvgBox, bar_index)
-                            line.set_extend(currentFVG.midLine, extend.none)
-                            line.set_x2(currentFVG.midLine, bar_index)
-                    else
-                        // Bearish FVG midpoint breached when price goes above midpoint
-                        if high >= currentFVG.midpoint
-                            currentFVG.midpointBreached := true
-                            box.set_extend(currentFVG.fvgBox, extend.none)
-                            box.set_right(currentFVG.fvgBox, bar_index)
-                            line.set_extend(currentFVG.midLine, extend.none)
-                            line.set_x2(currentFVG.midLine, bar_index)
-                // Note: If midpoint was already breached, we don't update the box anymore
-                // The box stays frozen at the breach point
-                
-                // Then check for full mitigation (price completely passes through the entire gap)
+
+// Update existing FVGs for mitigation and midpoint breach (runs on every bar)
+// Create a temporary array to track FVGs to remove
+var array<int> toRemove = array.new<int>()
+array.clear(toRemove)
+
+if showFVG and array.size(fvgArray) > 0
+    for i = 0 to array.size(fvgArray) - 1
+        currentFVG = array.get(fvgArray, i)
+        
+        if not currentFVG.mitigated
+            // Check for midpoint breach (including wicks)
+            if not currentFVG.midpointBreached
+                breached = false
                 if currentFVG.isBullish
-                    // Bullish FVG is mitigated when price trades below the bottom
-                    if low < currentFVG.bottom
-                        currentFVG.mitigated := true
-                        box.delete(currentFVG.fvgBox)
-                        line.delete(currentFVG.midLine)
-                        array.push(toRemove, i)
+                    // Bullish FVG midpoint breached when any part of candle (including wick) touches or goes below midpoint
+                    breached := low <= currentFVG.midpoint
                 else
-                    // Bearish FVG is mitigated when price trades above the top
-                    if high > currentFVG.top
-                        currentFVG.mitigated := true
-                        box.delete(currentFVG.fvgBox)
-                        line.delete(currentFVG.midLine)
-                        array.push(toRemove, i)
-    
-    // Remove mitigated FVGs from the array (in reverse order)
-    if array.size(toRemove) > 0
-        for j = array.size(toRemove) - 1 to 0
-            array.remove(fvgArray, array.get(toRemove, j))
+                    // Bearish FVG midpoint breached when any part of candle (including wick) touches or goes above midpoint
+                    breached := high >= currentFVG.midpoint
+                
+                if breached
+                    currentFVG.midpointBreached := true
+                    // Set both box and line to stop extending
+                    box.set_extend(currentFVG.fvgBox, extend.none)
+                    line.set_extend(currentFVG.midLine, extend.none)
+                    // Update their right edges to current position
+                    box.set_right(currentFVG.fvgBox, bar_index)
+                    line.set_x2(currentFVG.midLine, bar_index)
+            // Note: If already breached, do nothing - box stays frozen at breach point
+            
+            // Then check for full mitigation (price completely passes through the entire gap)
+            if currentFVG.isBullish
+                // Bullish FVG is mitigated when price trades below the bottom
+                if low < currentFVG.bottom
+                    currentFVG.mitigated := true
+                    box.delete(currentFVG.fvgBox)
+                    line.delete(currentFVG.midLine)
+                    array.push(toRemove, i)
+            else
+                // Bearish FVG is mitigated when price trades above the top
+                if high > currentFVG.top
+                    currentFVG.mitigated := true
+                    box.delete(currentFVG.fvgBox)
+                    line.delete(currentFVG.midLine)
+                    array.push(toRemove, i)
+
+// Remove mitigated FVGs from the array (in reverse order)
+if array.size(toRemove) > 0
+    for j = array.size(toRemove) - 1 to 0
+        array.remove(fvgArray, array.get(toRemove, j))
 
 // Alert conditions
 alertcondition(currentlyInSydney and not inSydneySession[1], title="Sydney Session Start", message="Sydney session has started")
