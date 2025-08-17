@@ -662,7 +662,7 @@ drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText,
             
             // Handle label with price
             if showLevelLabels
-                labelWithPrice = labelText + " (" + str.tostring(level, format.price) + ")"
+                labelWithPrice = labelText + " (" + str.tostring(level, "#.#####") + ")"
                 if na(localLabel)
                     futureTime = time + (time - time[1]) * labelOffset
                     localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
@@ -673,7 +673,7 @@ drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText,
         else
             // Line has been breached - keep label but change color to gray
             if showLevelLabels
-                labelWithPrice = labelText + " (" + str.tostring(level, format.price) + ")"
+                labelWithPrice = labelText + " (" + str.tostring(level, "#.#####") + ")"
                 if na(localLabel)
                     futureTime = time + (time - time[1]) * labelOffset
                     localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=color.gray, size=getTextSize(textSize))

@@ -1,5 +1,12 @@
 # Llama Strategy Indicator Changelog
 
+## [1.4.3] - 2025-01-17
+
+### Fixed
+- **Session Label Format**: Session level labels now show decimal prices instead of "price" text
+  - Asia and London session labels now match other level label formatting
+  - Both active and breached session labels use consistent decimal format
+
 ## [1.4.2] - 2025-01-17
 
 ### Fixed
