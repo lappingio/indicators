@@ -174,6 +174,17 @@ var bool asiaLowBreached = false
 var bool londonHighBreached = false
 var bool londonLowBreached = false
 
+// Track when levels start (bar index)
+var int currentDayOpenStart = na
+var int trueDayOpenStart = na
+var int prevDayStart = na
+var int prevWeekStart = na
+var int prevMonthStart = na
+var int currentWeekStart = na
+var int yearlyStart = na
+var int asiaSessionStart = na
+var int londonSessionStart = na
+
 // Check if we're in a session
 isInSession(sessionTime) =>
     not na(time(timeframe.period, sessionTime, timezone))
@@ -425,6 +436,7 @@ if showAsia
     else if not currentlyInAsia and inAsiaSession
         inAsiaSession := false
         asiaSessionEnded := true
+        asiaSessionStart := bar_index
 
 // Draw Fibonacci retracement after Asia session ends
 if showFibs and asiaSessionEnded and not fibsDrawn and not na(sydneyHigh) and not na(sydneyLow) and not na(asiaHigh) and not na(asiaLow)
@@ -552,6 +564,7 @@ if showLondon
     // Session ended
     else if not currentlyInLondon and inLondonSession
         inLondonSession := false
+        londonSessionStart := bar_index
 
 // Function to check if price has breached a level
 breachCheck(level, lineVar, breached) =>
@@ -565,19 +578,24 @@ breachCheck(level, lineVar, breached) =>
     result
 
 // Function to draw or update a level line without breach detection
-drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText) =>
+drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startBarIndex) =>
     var line localLine = lineVar
     var label localLabel = labelVar
+    var int lineStart = na
     
     if condition and not na(level)
+        // Set start bar index if not already set or if creating new line
+        if na(localLine) or na(lineStart)
+            lineStart := startBarIndex
+        
         // Delete old line and label if they exist
         if not na(localLine)
             line.delete(localLine)
         if not na(localLabel)
             label.delete(localLabel)
         
-        // Create new line with dotted style
-        localLine := line.new(bar_index, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
+        // Create new line with dotted style from the start bar index
+        localLine := line.new(lineStart, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
         
         // Create label if enabled
         if showLevelLabels
@@ -592,19 +610,24 @@ drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText) =>
     [localLine, localLabel]
 
 // Function to draw session level line with breach detection
-drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, breached) =>
+drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, breached, startBarIndex) =>
     var line localLine = lineVar
     var label localLabel = labelVar
+    var int lineStart = na
     
     if condition and not na(level) and not breached
+        // Set start bar index if not already set or if creating new line
+        if na(localLine) or na(lineStart)
+            lineStart := startBarIndex
+            
         // Delete old line and label if they exist
         if not na(localLine)
             line.delete(localLine)
         if not na(localLabel)
             label.delete(localLabel)
         
-        // Create new line with dotted style
-        localLine := line.new(bar_index, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
+        // Create new line with dotted style from the start bar index
+        localLine := line.new(lineStart, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
         
         // Create label if enabled
         if showLevelLabels
@@ -637,28 +660,36 @@ var float trueDayOpenPrice = na
 isMidnightET = currentHourET == 0 and currentMinuteET == 0
 if isMidnightET
     trueDayOpenPrice := open
+    trueDayOpenStart := bar_index
 
 // Track Current Day Open (6pm ET)
 var float currentDayOpenPrice = na
 if isNewDayStart
     currentDayOpenPrice := open
+    currentDayOpenStart := bar_index
     // Reset session breach flags at new day
     asiaHighBreached := false
     asiaLowBreached := false
     londonHighBreached := false
     londonLowBreached := false
+    // Reset start indices for new day
+    prevDayStart := bar_index
+    prevWeekStart := bar_index
+    prevMonthStart := bar_index
+    currentWeekStart := bar_index
+    yearlyStart := bar_index
 
 // Draw level lines if enabled
 if showLevels
     // Current Day Open (6pm ET)
     if showCurrentDayOpen and not na(currentDayOpenPrice)
-        [cdoLine, cdoLabel] = drawLevelLine(true, currentDayOpenPrice, currentDayOpenLine, currentDayOpenLabel, currentDayOpenColor, "Current Day Open")
+        [cdoLine, cdoLabel] = drawLevelLine(true, currentDayOpenPrice, currentDayOpenLine, currentDayOpenLabel, currentDayOpenColor, "Current Day Open", nz(currentDayOpenStart, bar_index))
         currentDayOpenLine := cdoLine
         currentDayOpenLabel := cdoLabel
     
     // True Day Open (12am ET)
     if showTrueDayOpen and not na(trueDayOpenPrice)
-        [tdoLine, tdoLabel] = drawLevelLine(true, trueDayOpenPrice, trueDayOpenLine, trueDayOpenLabel, trueDayOpenColor, "True Day Open")
+        [tdoLine, tdoLabel] = drawLevelLine(true, trueDayOpenPrice, trueDayOpenLine, trueDayOpenLabel, trueDayOpenColor, "True Day Open", nz(trueDayOpenStart, bar_index))
         trueDayOpenLine := tdoLine
         trueDayOpenLabel := tdoLabel
     
@@ -666,18 +697,18 @@ if showLevels
     if showPrevDayTriad
         if showPrevDayHL
             if not na(prevDayHigh)
-                [pdhLine, pdhLabel] = drawLevelLine(true, prevDayHigh, prevDayHighLine, prevDayHighLabel, prevDayHighColor, "PDH")
+                [pdhLine, pdhLabel] = drawLevelLine(true, prevDayHigh, prevDayHighLine, prevDayHighLabel, prevDayHighColor, "Previous Day High", nz(prevDayStart, bar_index))
                 prevDayHighLine := pdhLine
                 prevDayHighLabel := pdhLabel
             
             if not na(prevDayLow)
-                [pdlLine, pdlLabel] = drawLevelLine(true, prevDayLow, prevDayLowLine, prevDayLowLabel, prevDayLowColor, "PDL")
+                [pdlLine, pdlLabel] = drawLevelLine(true, prevDayLow, prevDayLowLine, prevDayLowLabel, prevDayLowColor, "Previous Day Low", nz(prevDayStart, bar_index))
                 prevDayLowLine := pdlLine
                 prevDayLowLabel := pdlLabel
         
         if showPrevDayMid and not na(prevDayHigh) and not na(prevDayLow)
             prevDayMidPrice = (prevDayHigh + prevDayLow) / 2
-            [pdmLine, pdmLabel] = drawLevelLine(true, prevDayMidPrice, prevDayMidLine, prevDayMidLabel, prevDayMidColor, "PD 50%")
+            [pdmLine, pdmLabel] = drawLevelLine(true, prevDayMidPrice, prevDayMidLine, prevDayMidLabel, prevDayMidColor, "Previous Day 50%", nz(prevDayStart, bar_index))
             prevDayMidLine := pdmLine
             prevDayMidLabel := pdmLabel
     
@@ -685,18 +716,18 @@ if showLevels
     if showPrevWeekTriad
         if showPrevWeekHL
             if not na(prevWeekHigh)
-                [pwhLine, pwhLabel] = drawLevelLine(true, prevWeekHigh, prevWeekHighLine, prevWeekHighLabel, prevWeekHighColor, "PWH")
+                [pwhLine, pwhLabel] = drawLevelLine(true, prevWeekHigh, prevWeekHighLine, prevWeekHighLabel, prevWeekHighColor, "Previous Week High", nz(prevWeekStart, bar_index))
                 prevWeekHighLine := pwhLine
                 prevWeekHighLabel := pwhLabel
             
             if not na(prevWeekLow)
-                [pwlLine, pwlLabel] = drawLevelLine(true, prevWeekLow, prevWeekLowLine, prevWeekLowLabel, prevWeekLowColor, "PWL")
+                [pwlLine, pwlLabel] = drawLevelLine(true, prevWeekLow, prevWeekLowLine, prevWeekLowLabel, prevWeekLowColor, "Previous Week Low", nz(prevWeekStart, bar_index))
                 prevWeekLowLine := pwlLine
                 prevWeekLowLabel := pwlLabel
         
         if showPrevWeekMid and not na(prevWeekHigh) and not na(prevWeekLow)
             prevWeekMidPrice = (prevWeekHigh + prevWeekLow) / 2
-            [pwmLine, pwmLabel] = drawLevelLine(true, prevWeekMidPrice, prevWeekMidLine, prevWeekMidLabel, prevWeekMidColor, "PW 50%")
+            [pwmLine, pwmLabel] = drawLevelLine(true, prevWeekMidPrice, prevWeekMidLine, prevWeekMidLabel, prevWeekMidColor, "Previous Week 50%", nz(prevWeekStart, bar_index))
             prevWeekMidLine := pwmLine
             prevWeekMidLabel := pwmLabel
     
@@ -704,18 +735,18 @@ if showLevels
     if showPrevMonthTriad
         if showPrevMonthHL
             if not na(prevMonthHigh)
-                [pmhLine, pmhLabel] = drawLevelLine(true, prevMonthHigh, prevMonthHighLine, prevMonthHighLabel, prevMonthHighColor, "PMH")
+                [pmhLine, pmhLabel] = drawLevelLine(true, prevMonthHigh, prevMonthHighLine, prevMonthHighLabel, prevMonthHighColor, "Previous Month High", nz(prevMonthStart, bar_index))
                 prevMonthHighLine := pmhLine
                 prevMonthHighLabel := pmhLabel
             
             if not na(prevMonthLow)
-                [pmlLine, pmlLabel] = drawLevelLine(true, prevMonthLow, prevMonthLowLine, prevMonthLowLabel, prevMonthLowColor, "PML")
+                [pmlLine, pmlLabel] = drawLevelLine(true, prevMonthLow, prevMonthLowLine, prevMonthLowLabel, prevMonthLowColor, "Previous Month Low", nz(prevMonthStart, bar_index))
                 prevMonthLowLine := pmlLine
                 prevMonthLowLabel := pmlLabel
         
         if showPrevMonthMid and not na(prevMonthHigh) and not na(prevMonthLow)
             prevMonthMidPrice = (prevMonthHigh + prevMonthLow) / 2
-            [pmmLine, pmmLabel] = drawLevelLine(true, prevMonthMidPrice, prevMonthMidLine, prevMonthMidLabel, prevMonthMidColor, "PM 50%")
+            [pmmLine, pmmLabel] = drawLevelLine(true, prevMonthMidPrice, prevMonthMidLine, prevMonthMidLabel, prevMonthMidColor, "Previous Month 50%", nz(prevMonthStart, bar_index))
             prevMonthMidLine := pmmLine
             prevMonthMidLabel := pmmLabel
     
@@ -723,18 +754,18 @@ if showLevels
     if showCurrentWeekTriad
         if showCurrentWeekHL
             if not na(weeklyHigh)
-                [cwhLine, cwhLabel] = drawLevelLine(true, weeklyHigh, currentWeekHighLine, currentWeekHighLabel, currentWeekHighColor, "CWH")
+                [cwhLine, cwhLabel] = drawLevelLine(true, weeklyHigh, currentWeekHighLine, currentWeekHighLabel, currentWeekHighColor, "Current Week High", nz(currentWeekStart, bar_index))
                 currentWeekHighLine := cwhLine
                 currentWeekHighLabel := cwhLabel
             
             if not na(weeklyLow)
-                [cwlLine, cwlLabel] = drawLevelLine(true, weeklyLow, currentWeekLowLine, currentWeekLowLabel, currentWeekLowColor, "CWL")
+                [cwlLine, cwlLabel] = drawLevelLine(true, weeklyLow, currentWeekLowLine, currentWeekLowLabel, currentWeekLowColor, "Current Week Low", nz(currentWeekStart, bar_index))
                 currentWeekLowLine := cwlLine
                 currentWeekLowLabel := cwlLabel
         
         if showCurrentWeekMid and not na(weeklyHigh) and not na(weeklyLow)
             currentWeekMidPrice = (weeklyHigh + weeklyLow) / 2
-            [cwmLine, cwmLabel] = drawLevelLine(true, currentWeekMidPrice, currentWeekMidLine, currentWeekMidLabel, currentWeekMidColor, "CW 50%")
+            [cwmLine, cwmLabel] = drawLevelLine(true, currentWeekMidPrice, currentWeekMidLine, currentWeekMidLabel, currentWeekMidColor, "Current Week 50%", nz(currentWeekStart, bar_index))
             currentWeekMidLine := cwmLine
             currentWeekMidLabel := cwmLabel
     
@@ -742,42 +773,42 @@ if showLevels
     if showYearlyTriad
         if showYearlyHL
             if not na(yearlyHighVal)
-                [yhLine, yhLabel] = drawLevelLine(true, yearlyHighVal, yearlyHighLine, yearlyHighLabel, yearlyHighColor, "Yearly High")
+                [yhLine, yhLabel] = drawLevelLine(true, yearlyHighVal, yearlyHighLine, yearlyHighLabel, yearlyHighColor, "Yearly High", nz(yearlyStart, bar_index))
                 yearlyHighLine := yhLine
                 yearlyHighLabel := yhLabel
             
             if not na(yearlyLowVal)
-                [ylLine, ylLabel] = drawLevelLine(true, yearlyLowVal, yearlyLowLine, yearlyLowLabel, yearlyLowColor, "Yearly Low")
+                [ylLine, ylLabel] = drawLevelLine(true, yearlyLowVal, yearlyLowLine, yearlyLowLabel, yearlyLowColor, "Yearly Low", nz(yearlyStart, bar_index))
                 yearlyLowLine := ylLine
                 yearlyLowLabel := ylLabel
         
         if showYearlyMid and not na(yearlyHighVal) and not na(yearlyLowVal)
             yearlyMidPrice = (yearlyHighVal + yearlyLowVal) / 2
-            [ymLine, ymLabel] = drawLevelLine(true, yearlyMidPrice, yearlyMidLine, yearlyMidLabel, yearlyMidColor, "Yearly 50%")
+            [ymLine, ymLabel] = drawLevelLine(true, yearlyMidPrice, yearlyMidLine, yearlyMidLabel, yearlyMidColor, "Yearly 50%", nz(yearlyStart, bar_index))
             yearlyMidLine := ymLine
             yearlyMidLabel := ymLabel
     
     // Asia Session High/Low (with breach detection)
     if showAsiaTriad and showAsiaHL and not na(asiaHigh) and not na(asiaLow) and not inAsiaSession
         asiaHighBreached := breachCheck(asiaHigh, asiaHighLine, asiaHighBreached)
-        [ahLine, ahLabel] = drawSessionLevelLine(true, asiaHigh, asiaHighLine, asiaHighLabel, asiaHighColor, "Asia High", asiaHighBreached)
+        [ahLine, ahLabel] = drawSessionLevelLine(true, asiaHigh, asiaHighLine, asiaHighLabel, asiaHighColor, "Asia High", asiaHighBreached, nz(asiaSessionStart, bar_index))
         asiaHighLine := ahLine
         asiaHighLabel := ahLabel
         
         asiaLowBreached := breachCheck(asiaLow, asiaLowLine, asiaLowBreached)
-        [alLine, alLabel] = drawSessionLevelLine(true, asiaLow, asiaLowLine, asiaLowLabel, asiaLowColor, "Asia Low", asiaLowBreached)
+        [alLine, alLabel] = drawSessionLevelLine(true, asiaLow, asiaLowLine, asiaLowLabel, asiaLowColor, "Asia Low", asiaLowBreached, nz(asiaSessionStart, bar_index))
         asiaLowLine := alLine
         asiaLowLabel := alLabel
     
     // London Session High/Low (with breach detection)
     if showLondonTriad and showLondonHL and not na(londonHigh) and not na(londonLow) and not inLondonSession
         londonHighBreached := breachCheck(londonHigh, londonHighLine, londonHighBreached)
-        [lhLine, lhLabel] = drawSessionLevelLine(true, londonHigh, londonHighLine, londonHighLabel, londonHighColor, "London High", londonHighBreached)
+        [lhLine, lhLabel] = drawSessionLevelLine(true, londonHigh, londonHighLine, londonHighLabel, londonHighColor, "London High", londonHighBreached, nz(londonSessionStart, bar_index))
         londonHighLine := lhLine
         londonHighLabel := lhLabel
         
         londonLowBreached := breachCheck(londonLow, londonLowLine, londonLowBreached)
-        [llLine, llLabel] = drawSessionLevelLine(true, londonLow, londonLowLine, londonLowLabel, londonLowColor, "London Low", londonLowBreached)
+        [llLine, llLabel] = drawSessionLevelLine(true, londonLow, londonLowLine, londonLowLabel, londonLowColor, "London Low", londonLowBreached, nz(londonSessionStart, bar_index))
         londonLowLine := llLine
         londonLowLabel := llLabel
 
