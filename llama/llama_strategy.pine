@@ -266,11 +266,10 @@ if isNewDayStart
         label.delete(fibNeg786Label)
         fibNeg786Label := na
     // Delete all FVGs
-    for i = array.size(fvgArray) - 1 to 0 by -1
-        currentFVG = array.get(fvgArray, i)
+    while array.size(fvgArray) > 0
+        currentFVG = array.pop(fvgArray)
         box.delete(currentFVG.fvgBox)
         line.delete(currentFVG.midLine)
-        array.remove(fvgArray, i)
     // Delete level lines and labels
     if not na(currentDayOpenLine)
         line.delete(currentDayOpenLine)
@@ -943,51 +942,60 @@ if showFVG and timeframe.isintraday and timeframe.multiplier <= 15
             array.push(fvgArray, newFVG)
     
     // Update existing FVGs for mitigation and midpoint breach
-    for i = array.size(fvgArray) - 1 to 0 by -1
-        currentFVG = array.get(fvgArray, i)
-        
-        if not currentFVG.mitigated
-            // Check for full mitigation (price completely passes through the gap)
-            if currentFVG.isBullish
-                // Bullish FVG is mitigated when price closes below the bottom
-                if close < currentFVG.bottom
-                    currentFVG.mitigated := true
-                    box.delete(currentFVG.fvgBox)
-                    line.delete(currentFVG.midLine)
-                    array.remove(fvgArray, i)
-                    continue
-            else
-                // Bearish FVG is mitigated when price closes above the top
-                if close > currentFVG.top
-                    currentFVG.mitigated := true
-                    box.delete(currentFVG.fvgBox)
-                    line.delete(currentFVG.midLine)
-                    array.remove(fvgArray, i)
-                    continue
+    // Create a temporary array to track FVGs to remove
+    var array<int> toRemove = array.new<int>()
+    array.clear(toRemove)
+    
+    if array.size(fvgArray) > 0
+        for i = 0 to array.size(fvgArray) - 1
+            currentFVG = array.get(fvgArray, i)
             
-            // Check for midpoint breach (stop extending to the right)
-            if not currentFVG.midpointBreached
+            if not currentFVG.mitigated
+                // Check for full mitigation (price completely passes through the gap)
                 if currentFVG.isBullish
-                    // Bullish FVG midpoint breached when price goes below midpoint
-                    if low <= currentFVG.midpoint
-                        currentFVG.midpointBreached := true
-                        box.set_extend(currentFVG.fvgBox, extend.none)
-                        box.set_right(currentFVG.fvgBox, bar_index)
-                        line.set_extend(currentFVG.midLine, extend.none)
-                        line.set_x2(currentFVG.midLine, bar_index)
+                    // Bullish FVG is mitigated when price closes below the bottom
+                    if close < currentFVG.bottom
+                        currentFVG.mitigated := true
+                        box.delete(currentFVG.fvgBox)
+                        line.delete(currentFVG.midLine)
+                        array.push(toRemove, i)
                 else
-                    // Bearish FVG midpoint breached when price goes above midpoint
-                    if high >= currentFVG.midpoint
-                        currentFVG.midpointBreached := true
-                        box.set_extend(currentFVG.fvgBox, extend.none)
-                        box.set_right(currentFVG.fvgBox, bar_index)
-                        line.set_extend(currentFVG.midLine, extend.none)
-                        line.set_x2(currentFVG.midLine, bar_index)
-            else
-                // If midpoint was breached but not mitigated, keep updating the right edge
+                    // Bearish FVG is mitigated when price closes above the top
+                    if close > currentFVG.top
+                        currentFVG.mitigated := true
+                        box.delete(currentFVG.fvgBox)
+                        line.delete(currentFVG.midLine)
+                        array.push(toRemove, i)
+                
+                // Only check midpoint if not mitigated
                 if not currentFVG.mitigated
-                    box.set_right(currentFVG.fvgBox, bar_index)
-                    line.set_x2(currentFVG.midLine, bar_index)
+                    // Check for midpoint breach (stop extending to the right)
+                    if not currentFVG.midpointBreached
+                        if currentFVG.isBullish
+                            // Bullish FVG midpoint breached when price goes below midpoint
+                            if low <= currentFVG.midpoint
+                                currentFVG.midpointBreached := true
+                                box.set_extend(currentFVG.fvgBox, extend.none)
+                                box.set_right(currentFVG.fvgBox, bar_index)
+                                line.set_extend(currentFVG.midLine, extend.none)
+                                line.set_x2(currentFVG.midLine, bar_index)
+                        else
+                            // Bearish FVG midpoint breached when price goes above midpoint
+                            if high >= currentFVG.midpoint
+                                currentFVG.midpointBreached := true
+                                box.set_extend(currentFVG.fvgBox, extend.none)
+                                box.set_right(currentFVG.fvgBox, bar_index)
+                                line.set_extend(currentFVG.midLine, extend.none)
+                                line.set_x2(currentFVG.midLine, bar_index)
+                    else
+                        // If midpoint was breached but not mitigated, keep updating the right edge
+                        box.set_right(currentFVG.fvgBox, bar_index)
+                        line.set_x2(currentFVG.midLine, bar_index)
+    
+    // Remove mitigated FVGs from the array (in reverse order)
+    if array.size(toRemove) > 0
+        for j = array.size(toRemove) - 1 to 0
+            array.remove(fvgArray, array.get(toRemove, j))
 
 // Alert conditions
 alertcondition(currentlyInSydney and not inSydneySession[1], title="Sydney Session Start", message="Sydney session has started")
