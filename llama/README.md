@@ -64,7 +64,7 @@ The indicator automatically detects and displays Fair Value Gaps from the 15-min
 
 #### FVG Behavior:
 - Initially extends to the right indefinitely
-- **Midpoint Breach**: When price touches the midpoint, the box stops extending but remains visible
+- **Midpoint Breach**: When price touches the midpoint, the box stops extending and freezes at that point
 - **Full Mitigation**: FVG is completely removed only when price fully passes through the entire gap
   - Bullish FVG: Mitigated when price trades below the bottom of the gap
   - Bearish FVG: Mitigated when price trades above the top of the gap

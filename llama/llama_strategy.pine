@@ -974,10 +974,8 @@ if showFVG and is15MinBar
                             box.set_right(currentFVG.fvgBox, bar_index)
                             line.set_extend(currentFVG.midLine, extend.none)
                             line.set_x2(currentFVG.midLine, bar_index)
-                else
-                    // If midpoint was already breached, keep updating the right edge until mitigated
-                    box.set_right(currentFVG.fvgBox, bar_index)
-                    line.set_x2(currentFVG.midLine, bar_index)
+                // Note: If midpoint was already breached, we don't update the box anymore
+                // The box stays frozen at the breach point
                 
                 // Then check for full mitigation (price completely passes through the entire gap)
                 if currentFVG.isBullish
