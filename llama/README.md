@@ -43,10 +43,29 @@ The indicator draws horizontal level lines with configurable triads (High/Low/50
 All level lines:
 - Display as dotted lines for easy identification
 - Standard levels extend indefinitely to the right
-- Session levels terminate at breach points
+- Session levels terminate at breach points but labels turn gray and continue moving
 - Reset daily at 6pm ET
 - Each triad is toggleable as a group
 - Individual components (High/Low/50%) can be toggled within each triad
+- All labels show price values in format "Label (Price)"
+
+### Fair Value Gaps (FVGs)
+The indicator automatically detects and displays Fair Value Gaps on 15-minute and lower timeframes:
+
+#### FVG Features:
+- **Bullish FVGs**: Purple semi-transparent boxes (gaps between candle[2] high and candle[0] low)
+- **Bearish FVGs**: Pink/Fuchsia semi-transparent boxes (gaps between candle[2] low and candle[0] high)
+- **Midpoint Lines**: White dotted lines showing the 50% level of each gap
+- **Midpoint Breach**: Boxes stop extending right when price breaches the midpoint
+- **Full Mitigation**: FVGs disappear completely when price fully passes through the gap
+- **Maximum Display**: Configurable limit on number of FVGs shown (default: 20)
+- **Minimum Size**: Only shows FVGs above a configurable minimum size
+
+#### FVG Behavior:
+- Extends to the right until midpoint is breached
+- After midpoint breach, box stops extending but remains visible
+- Completely removed when price fully mitigates (passes through) the gap
+- All FVGs reset at 6pm ET with new trading day
 
 ## Usage
 

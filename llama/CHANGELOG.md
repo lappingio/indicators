@@ -1,5 +1,19 @@
 # Llama Strategy Indicator Changelog
 
+## [1.4.0] - 2025-01-17
+
+### Added
+- **Fair Value Gaps (FVGs)**: Automatic detection and display of FVGs on 15-minute and lower timeframes
+  - Bullish FVGs shown in purple semi-transparent boxes
+  - Bearish FVGs shown in pink/fuchsia semi-transparent boxes
+  - Midpoint lines in white dotted style
+  - Configurable maximum display count and minimum size
+- **FVG Mitigation**: FVGs disappear when price fully passes through the gap
+- **FVG Midpoint Breach**: Boxes stop extending right when midpoint is breached
+
+### Changed
+- **Label Format**: Price values now show in decimal format (e.g., "1.23456") instead of formatted price
+
 ## [1.3.0] - 2025-01-17
 
 ### Added

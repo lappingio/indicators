@@ -82,6 +82,14 @@ asiaLowColor = input.color(color.new(color.purple, 0), "Asia Low", group="Level 
 londonHighColor = input.color(color.new(color.purple, 0), "London High", group="Level Colors")
 londonLowColor = input.color(color.new(color.purple, 0), "London Low", group="Level Colors")
 
+// FVG Settings
+showFVG = input.bool(true, "Show Fair Value Gaps", group="Fair Value Gaps")
+fvgBullishColor = input.color(color.new(color.purple, 80), "Bullish FVG Color", group="Fair Value Gaps")
+fvgBearishColor = input.color(color.new(color.fuchsia, 80), "Bearish FVG Color", group="Fair Value Gaps")
+fvgMidlineColor = input.color(color.new(color.white, 50), "FVG Midpoint Color", group="Fair Value Gaps")
+maxFVGs = input.int(20, "Maximum FVGs to Display", minval=1, maxval=50, group="Fair Value Gaps")
+fvgMinSize = input.float(0.0001, "Minimum FVG Size (in price)", minval=0.0, group="Fair Value Gaps")
+
 // Timezone setting (ET = Eastern Time)
 timezone = "America/New_York"
 
@@ -186,6 +194,20 @@ var int yearlyStart = na
 var int asiaSessionStart = na
 var int londonSessionStart = na
 
+// FVG tracking - using arrays to manage multiple FVGs
+type FVG
+    box fvgBox
+    line midLine
+    float top
+    float bottom
+    float midpoint
+    bool isBullish
+    bool midpointBreached
+    bool mitigated
+    int startBar
+
+var array<FVG> fvgArray = array.new<FVG>()
+
 // Initialize start indices on first bar if not set
 if barstate.isfirst
     prevDayStart := bar_index
@@ -243,6 +265,12 @@ if isNewDayStart
     if not na(fibNeg786Label)
         label.delete(fibNeg786Label)
         fibNeg786Label := na
+    // Delete all FVGs
+    for i = array.size(fvgArray) - 1 to 0
+        currentFVG = array.get(fvgArray, i)
+        box.delete(currentFVG.fvgBox)
+        line.delete(currentFVG.midLine)
+        array.remove(fvgArray, i)
     // Delete level lines and labels
     if not na(currentDayOpenLine)
         line.delete(currentDayOpenLine)
@@ -606,7 +634,7 @@ drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startB
         
         // Handle label with price
         if showLevelLabels
-            labelWithPrice = labelText + " (" + str.tostring(level, format.price) + ")"
+            labelWithPrice = labelText + " (" + str.tostring(level, "#.#####") + ")"
             if na(localLabel)
                 futureTime = time + (time - time[1]) * labelOffset
                 localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
@@ -851,6 +879,119 @@ if showLevels
         [llLine, llLabel] = drawSessionLevelLine(true, londonLow, londonLowLine, londonLowLabel, londonLowColor, "London Low", londonLowBreached, nz(londonSessionStart, bar_index))
         londonLowLine := llLine
         londonLowLabel := llLabel
+
+// =========================
+// Fair Value Gap Detection
+// =========================
+if showFVG and timeframe.isintraday and timeframe.multiplier <= 15
+    // Detect FVG - requires 3 candles
+    if bar_index >= 2
+        // Bullish FVG: Gap up between candle[2] high and candle[0] low
+        bullishGapTop = low[0]
+        bullishGapBottom = high[2]
+        bullishGapSize = bullishGapTop - bullishGapBottom
+        
+        // Bearish FVG: Gap down between candle[2] low and candle[0] high
+        bearishGapTop = low[2]
+        bearishGapBottom = high[0]
+        bearishGapSize = bearishGapTop - bearishGapBottom
+        
+        // Check for Bullish FVG
+        if bullishGapSize > fvgMinSize and bullishGapBottom < bullishGapTop
+            // Create new FVG object
+            newFVG = FVG.new()
+            newFVG.top := bullishGapTop
+            newFVG.bottom := bullishGapBottom
+            newFVG.midpoint := (bullishGapTop + bullishGapBottom) / 2
+            newFVG.isBullish := true
+            newFVG.midpointBreached := false
+            newFVG.mitigated := false
+            newFVG.startBar := bar_index
+            
+            // Create box and midline
+            newFVG.fvgBox := box.new(bar_index, bullishGapTop, bar_index + 1, bullishGapBottom, 
+                bgcolor=fvgBullishColor, border_color=na, extend=extend.right)
+            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, 
+                color=fvgMidlineColor, width=1, style=line.style_dotted, extend=extend.right)
+            
+            // Add to array (manage max count)
+            if array.size(fvgArray) >= maxFVGs
+                oldestFVG = array.shift(fvgArray)
+                box.delete(oldestFVG.fvgBox)
+                line.delete(oldestFVG.midLine)
+            array.push(fvgArray, newFVG)
+        
+        // Check for Bearish FVG
+        else if bearishGapSize > fvgMinSize and bearishGapBottom < bearishGapTop
+            // Create new FVG object
+            newFVG = FVG.new()
+            newFVG.top := bearishGapTop
+            newFVG.bottom := bearishGapBottom
+            newFVG.midpoint := (bearishGapTop + bearishGapBottom) / 2
+            newFVG.isBullish := false
+            newFVG.midpointBreached := false
+            newFVG.mitigated := false
+            newFVG.startBar := bar_index
+            
+            // Create box and midline
+            newFVG.fvgBox := box.new(bar_index, bearishGapTop, bar_index + 1, bearishGapBottom, 
+                bgcolor=fvgBearishColor, border_color=na, extend=extend.right)
+            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, 
+                color=fvgMidlineColor, width=1, style=line.style_dotted, extend=extend.right)
+            
+            // Add to array (manage max count)
+            if array.size(fvgArray) >= maxFVGs
+                oldestFVG = array.shift(fvgArray)
+                box.delete(oldestFVG.fvgBox)
+                line.delete(oldestFVG.midLine)
+            array.push(fvgArray, newFVG)
+    
+    // Update existing FVGs for mitigation and midpoint breach
+    for i = array.size(fvgArray) - 1 to 0
+        currentFVG = array.get(fvgArray, i)
+        
+        if not currentFVG.mitigated
+            // Check for full mitigation (price completely passes through the gap)
+            if currentFVG.isBullish
+                // Bullish FVG is mitigated when price closes below the bottom
+                if close < currentFVG.bottom
+                    currentFVG.mitigated := true
+                    box.delete(currentFVG.fvgBox)
+                    line.delete(currentFVG.midLine)
+                    array.remove(fvgArray, i)
+                    continue
+            else
+                // Bearish FVG is mitigated when price closes above the top
+                if close > currentFVG.top
+                    currentFVG.mitigated := true
+                    box.delete(currentFVG.fvgBox)
+                    line.delete(currentFVG.midLine)
+                    array.remove(fvgArray, i)
+                    continue
+            
+            // Check for midpoint breach (stop extending to the right)
+            if not currentFVG.midpointBreached
+                if currentFVG.isBullish
+                    // Bullish FVG midpoint breached when price goes below midpoint
+                    if low <= currentFVG.midpoint
+                        currentFVG.midpointBreached := true
+                        box.set_extend(currentFVG.fvgBox, extend.none)
+                        box.set_right(currentFVG.fvgBox, bar_index)
+                        line.set_extend(currentFVG.midLine, extend.none)
+                        line.set_x2(currentFVG.midLine, bar_index)
+                else
+                    // Bearish FVG midpoint breached when price goes above midpoint
+                    if high >= currentFVG.midpoint
+                        currentFVG.midpointBreached := true
+                        box.set_extend(currentFVG.fvgBox, extend.none)
+                        box.set_right(currentFVG.fvgBox, bar_index)
+                        line.set_extend(currentFVG.midLine, extend.none)
+                        line.set_x2(currentFVG.midLine, bar_index)
+            else
+                // If midpoint was breached but not mitigated, keep updating the right edge
+                if not currentFVG.mitigated
+                    box.set_right(currentFVG.fvgBox, bar_index)
+                    line.set_x2(currentFVG.midLine, bar_index)
 
 // Alert conditions
 alertcondition(currentlyInSydney and not inSydneySession[1], title="Sydney Session Start", message="Sydney session has started")
