@@ -68,7 +68,7 @@ The indicator automatically detects and displays Fair Value Gaps from the 15-min
 - **Full Mitigation**: FVG is completely removed only when price fully passes through the entire gap
   - Bullish FVG: Mitigated when price trades below the bottom of the gap
   - Bearish FVG: Mitigated when price trades above the top of the gap
-- All FVGs reset at 6pm ET with new trading day
+- **Persistence**: FVGs persist across trading days until mitigated (not cleared at 6pm ET)
 
 ## Usage
 

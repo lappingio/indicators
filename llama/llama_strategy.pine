@@ -265,11 +265,7 @@ if isNewDayStart
     if not na(fibNeg786Label)
         label.delete(fibNeg786Label)
         fibNeg786Label := na
-    // Delete all FVGs
-    while array.size(fvgArray) > 0
-        currentFVG = array.pop(fvgArray)
-        box.delete(currentFVG.fvgBox)
-        line.delete(currentFVG.midLine)
+    // Note: FVGs are NOT cleared at daily reset - they persist until mitigated
     // Delete level lines and labels
     if not na(currentDayOpenLine)
         line.delete(currentDayOpenLine)

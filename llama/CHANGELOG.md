@@ -1,5 +1,10 @@
 # Llama Strategy Indicator Changelog
 
+## [1.4.1] - 2025-01-17
+
+### Changed
+- **FVG Persistence**: FVGs no longer reset at 6pm ET - they persist until mitigated
+
 ## [1.4.0] - 2025-01-17
 
 ### Added
