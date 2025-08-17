@@ -84,8 +84,8 @@ londonLowColor = input.color(color.new(color.purple, 0), "London Low", group="Le
 
 // FVG Settings
 showFVG = input.bool(true, "Show Fair Value Gaps", group="Fair Value Gaps")
-fvgBullishColor = input.color(color.new(color.purple, 80), "Bullish FVG Color", group="Fair Value Gaps")
-fvgBearishColor = input.color(color.new(color.fuchsia, 80), "Bearish FVG Color", group="Fair Value Gaps")
+fvgBullishColor = input.color(color.new(color.green, 80), "Bullish FVG Color", group="Fair Value Gaps")
+fvgBearishColor = input.color(color.new(color.red, 80), "Bearish FVG Color", group="Fair Value Gaps")
 fvgMidlineColor = input.color(color.new(color.white, 0), "FVG Midpoint Color", group="Fair Value Gaps")
 fvgMidlineWidth = input.int(2, "FVG Midpoint Width", minval=1, maxval=5, group="Fair Value Gaps")
 maxFVGs = input.int(20, "Maximum FVGs to Display", minval=1, maxval=50, group="Fair Value Gaps")

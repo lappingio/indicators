@@ -54,8 +54,8 @@ The indicator automatically detects and displays Fair Value Gaps from the 15-min
 
 #### FVG Features:
 - **15-Minute Detection**: FVGs are detected specifically on 15-minute candles regardless of current chart timeframe
-- **Bullish FVGs**: Purple semi-transparent boxes (gaps between 15min candle[2] high and candle[0] low)
-- **Bearish FVGs**: Pink/Fuchsia semi-transparent boxes (gaps between 15min candle[2] low and candle[0] high)
+- **Bullish FVGs**: Green semi-transparent boxes (gaps between 15min candle[2] high and candle[0] low)
+- **Bearish FVGs**: Red semi-transparent boxes (gaps between 15min candle[2] low and candle[0] high)
 - **Midpoint Lines**: Bright white solid lines showing the 50% level of each gap (configurable width)
 - **Midpoint Breach**: Boxes stop extending right when price breaches the midpoint
 - **Full Mitigation**: FVGs disappear completely when price fully passes through the gap
