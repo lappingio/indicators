@@ -149,7 +149,7 @@ if showSydney
             box.delete(sydneyBox)
         
         // Create new box with text
-        sydneyBox := box.new(bar_index, high, bar_index, low, border_color=color.new(sydneyColor, 20), border_width=boxBorderWidth, bgcolor=sydneyColor, text=showSessionLabels ? "SYDNEY" : "", text_color=textColor, text_size=getTextSize(textSize))
+        sydneyBox := box.new(bar_index, high, bar_index, low, border_color=color.new(sydneyColor, 20), border_width=boxBorderWidth, bgcolor=sydneyColor, text=showSessionLabels ? "SYDNEY" : "", text_color=color.new(sydneyColor, 20), text_size=size.normal)
     
     // Update box during session
     else if currentlyInSydney and inSydneySession
@@ -169,7 +169,7 @@ if showAsia
             box.delete(asiaBox)
         
         // Create new box with text
-        asiaBox := box.new(bar_index, high, bar_index, low, border_color=color.new(asiaColor, 20), border_width=boxBorderWidth, bgcolor=asiaColor, text=showSessionLabels ? "ASIA" : "", text_color=textColor, text_size=getTextSize(textSize))
+        asiaBox := box.new(bar_index, high, bar_index, low, border_color=color.new(asiaColor, 20), border_width=boxBorderWidth, bgcolor=asiaColor, text=showSessionLabels ? "ASIA" : "", text_color=color.new(asiaColor, 20), text_size=size.normal)
         
         asiaHigh := high
         asiaLow := low
@@ -297,7 +297,7 @@ if showLondon
             box.delete(londonBox)
         
         // Create new box with text
-        londonBox := box.new(bar_index, high, bar_index, low, border_color=color.new(londonColor, 20), border_width=boxBorderWidth, bgcolor=londonColor, text=showSessionLabels ? "LONDON" : "", text_color=textColor, text_size=getTextSize(textSize))
+        londonBox := box.new(bar_index, high, bar_index, low, border_color=color.new(londonColor, 20), border_width=boxBorderWidth, bgcolor=londonColor, text=showSessionLabels ? "LONDON" : "", text_color=color.new(londonColor, 20), text_size=size.normal)
         
         londonHigh := high
         londonLow := low
