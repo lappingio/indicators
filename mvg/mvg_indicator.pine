@@ -4,8 +4,6 @@ indicator("Max Value Gap (MVG) Indicator", overlay=true, max_boxes_count=500, ma
 // Input parameters
 maxGapsToTrack = input.int(100, "Maximum Gaps to Track", minval=10, maxval=500)
 showTable = input.bool(true, "Show Statistics Table")
-alertOnGapFill = input.bool(true, "Alert on Gap Fill")
-alertOnGapCreate = input.bool(false, "Alert on Gap Creation")
 tableTextSize = input.string("normal", "Table Text Size", options=["tiny", "small", "normal", "large"])
 
 // Colors
@@ -139,11 +137,6 @@ if detectGap() and barstate.isconfirmed
         if currentDate == getCurrentDate()
             sameDayGaps := sameDayGaps + 1
         
-        // Alert for gap creation
-        if alertOnGapCreate
-            gapSizePct = isGapUp ? (low - high[1]) / high[1] * 100 : (low[1] - high) / low[1] * 100
-            alertMessage = "Gap " + (isGapUp ? "UP" : "DOWN") + " created: " + str.tostring(gapSizePct, "#.##") + "% | Range: " + str.tostring(gapLow, "#.##") + " - " + str.tostring(gapHigh, "#.##")
-            alert(alertMessage, alert.freq_once_per_bar)
 
 // Extend unfilled gaps and check for gap fills
 if barstate.isconfirmed and array.size(gapBoxes) > 0
@@ -195,12 +188,6 @@ if barstate.isconfirmed and array.size(gapBoxes) > 0
                     gapsFilledToday := gapsFilledToday + 1
                     sameDayFills := sameDayFills + 1
                 
-                // Alert for gap fill
-                if alertOnGapFill
-                    gapDirection = gapIsUp ? "UP" : "DOWN"
-                    gapRange = str.tostring(gapLowLevel, "#.##") + " - " + str.tostring(gapHighLevel, "#.##")
-                    fillMessage = "Gap " + gapDirection + " FILLED | Range: " + gapRange + " | Bars to fill: " + str.tostring(barsUsedToFill)
-                    alert(fillMessage, alert.freq_once_per_bar)
 
 // Create statistics table
 if showTable and barstate.islast
@@ -256,3 +243,27 @@ if showTable and barstate.islast
     table.cell(statsTable, 2, 3, str.tostring(totalFillPct, "#.##") + "%", 
               text_color=color.white, bgcolor=tableRowColor, 
               text_size=tableTextSize)
+
+// Alert conditions for better alert dialog
+gapCreatedCondition = detectGap() and barstate.isconfirmed
+gapFilledThisBar = false
+
+// Track if a gap was filled on this specific bar
+for i = 0 to array.size(gapBoxes) - 1
+    if i < array.size(gapFilled) and not array.get(gapFilled, i)
+        gapIsUp = array.get(gapTypes, i)
+        gapHighLevel = array.get(gapHighs, i)
+        gapLowLevel = array.get(gapLows, i)
+        
+        if gapIsUp
+            if low < gapLowLevel
+                gapFilledThisBar := true
+        else
+            if high > gapHighLevel
+                gapFilledThisBar := true
+
+// Create alert conditions that show up in the alert dialog
+alertcondition(gapCreatedCondition, title="Gap Created", message="New gap detected: {{ticker}} at {{close}}")
+alertcondition(gapFilledThisBar, title="Gap Filled", message="Gap filled: {{ticker}} at {{close}}")
+alertcondition(gapCreatedCondition and low > high[1], title="Gap Up Created", message="Gap UP created: {{ticker}} at {{close}}")
+alertcondition(gapCreatedCondition and high < low[1], title="Gap Down Created", message="Gap DOWN created: {{ticker}} at {{close}}")
