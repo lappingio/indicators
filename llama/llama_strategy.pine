@@ -959,8 +959,30 @@ if showFVG and is15MinBar
             currentFVG = array.get(fvgArray, i)
             
             if not currentFVG.mitigated
-                // Check for full mitigation (price completely passes through the gap)
-                // Use actual price action, not just 15-minute closes
+                // First check for midpoint breach (stop extending to the right)
+                if not currentFVG.midpointBreached
+                    if currentFVG.isBullish
+                        // Bullish FVG midpoint breached when price goes below midpoint
+                        if low <= currentFVG.midpoint
+                            currentFVG.midpointBreached := true
+                            box.set_extend(currentFVG.fvgBox, extend.none)
+                            box.set_right(currentFVG.fvgBox, bar_index)
+                            line.set_extend(currentFVG.midLine, extend.none)
+                            line.set_x2(currentFVG.midLine, bar_index)
+                    else
+                        // Bearish FVG midpoint breached when price goes above midpoint
+                        if high >= currentFVG.midpoint
+                            currentFVG.midpointBreached := true
+                            box.set_extend(currentFVG.fvgBox, extend.none)
+                            box.set_right(currentFVG.fvgBox, bar_index)
+                            line.set_extend(currentFVG.midLine, extend.none)
+                            line.set_x2(currentFVG.midLine, bar_index)
+                else
+                    // If midpoint was already breached, keep updating the right edge until mitigated
+                    box.set_right(currentFVG.fvgBox, bar_index)
+                    line.set_x2(currentFVG.midLine, bar_index)
+                
+                // Then check for full mitigation (price completely passes through the entire gap)
                 if currentFVG.isBullish
                     // Bullish FVG is mitigated when price trades below the bottom
                     if low < currentFVG.bottom
@@ -975,31 +997,6 @@ if showFVG and is15MinBar
                         box.delete(currentFVG.fvgBox)
                         line.delete(currentFVG.midLine)
                         array.push(toRemove, i)
-                
-                // Only check midpoint if not mitigated
-                if not currentFVG.mitigated
-                    // Check for midpoint breach (stop extending to the right)
-                    if not currentFVG.midpointBreached
-                        if currentFVG.isBullish
-                            // Bullish FVG midpoint breached when price goes below midpoint
-                            if low <= currentFVG.midpoint
-                                currentFVG.midpointBreached := true
-                                box.set_extend(currentFVG.fvgBox, extend.none)
-                                box.set_right(currentFVG.fvgBox, bar_index)
-                                line.set_extend(currentFVG.midLine, extend.none)
-                                line.set_x2(currentFVG.midLine, bar_index)
-                        else
-                            // Bearish FVG midpoint breached when price goes above midpoint
-                            if high >= currentFVG.midpoint
-                                currentFVG.midpointBreached := true
-                                box.set_extend(currentFVG.fvgBox, extend.none)
-                                box.set_right(currentFVG.fvgBox, bar_index)
-                                line.set_extend(currentFVG.midLine, extend.none)
-                                line.set_x2(currentFVG.midLine, bar_index)
-                    else
-                        // If midpoint was breached but not mitigated, keep updating the right edge
-                        box.set_right(currentFVG.fvgBox, bar_index)
-                        line.set_x2(currentFVG.midLine, bar_index)
     
     // Remove mitigated FVGs from the array (in reverse order)
     if array.size(toRemove) > 0
