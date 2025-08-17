@@ -24,6 +24,32 @@ showFibs = input.bool(true, "Show Fibonacci Retracement", group="Fibonacci")
 fibLineWidth = input.int(1, "Fib Line Width", minval=1, maxval=5, group="Fibonacci")
 showFibLabels = input.bool(true, "Show Fib Level Text", group="Fibonacci")
 
+// Level Lines Settings
+showLevels = input.bool(true, "Show Level Lines", group="Level Lines")
+showCurrentDayOpen = input.bool(true, "Current Day Open", group="Level Lines")
+showTrueDayOpen = input.bool(true, "True Day Open (12am ET)", group="Level Lines")
+showPrevDayHL = input.bool(true, "Previous Day High/Low", group="Level Lines")
+showPrevWeekHL = input.bool(true, "Previous Week High/Low", group="Level Lines")
+showCurrentWeekHL = input.bool(true, "Current Week High/Low", group="Level Lines")
+showYearlyHL = input.bool(true, "Yearly High/Low", group="Level Lines")
+showAsiaHL = input.bool(true, "Asia Session High/Low", group="Level Lines")
+levelLineWidth = input.int(1, "Level Line Width", minval=1, maxval=3, group="Level Lines")
+showLevelLabels = input.bool(true, "Show Level Labels", group="Level Lines")
+
+// Level Line Colors
+currentDayOpenColor = input.color(color.new(color.orange, 0), "Current Day Open", group="Level Colors")
+trueDayOpenColor = input.color(color.new(color.purple, 0), "True Day Open", group="Level Colors")
+prevDayHighColor = input.color(color.new(color.green, 0), "Previous Day High", group="Level Colors")
+prevDayLowColor = input.color(color.new(color.red, 0), "Previous Day Low", group="Level Colors")
+prevWeekHighColor = input.color(color.new(color.teal, 0), "Previous Week High", group="Level Colors")
+prevWeekLowColor = input.color(color.new(color.maroon, 0), "Previous Week Low", group="Level Colors")
+currentWeekHighColor = input.color(color.new(color.lime, 0), "Current Week High", group="Level Colors")
+currentWeekLowColor = input.color(color.new(color.fuchsia, 0), "Current Week Low", group="Level Colors")
+yearlyHighColor = input.color(color.new(color.aqua, 0), "Yearly High", group="Level Colors")
+yearlyLowColor = input.color(color.new(color.silver, 0), "Yearly Low", group="Level Colors")
+asiaHighColor = input.color(color.new(color.blue, 0), "Asia High", group="Level Colors")
+asiaLowColor = input.color(color.new(color.blue, 0), "Asia Low", group="Level Colors")
+
 // Timezone setting (ET = Eastern Time)
 timezone = "America/New_York"
 
@@ -79,7 +105,7 @@ isNewDayStart = currentHourET == 18 and currentMinuteET == 0
 
 // Note: Cannot use function to delete fibs due to Pine Script global variable restrictions
 
-// Delete previous day's boxes and fibs at 6pm ET
+// Delete previous day's boxes, fibs, and level lines at 6pm ET
 if isNewDayStart
     if not na(sydneyBox)
         box.delete(sydneyBox)
@@ -115,6 +141,79 @@ if isNewDayStart
     if not na(fibNeg786Label)
         label.delete(fibNeg786Label)
         fibNeg786Label := na
+    // Delete level lines and labels
+    if not na(currentDayOpenLine)
+        line.delete(currentDayOpenLine)
+        currentDayOpenLine := na
+    if not na(currentDayOpenLabel)
+        label.delete(currentDayOpenLabel)
+        currentDayOpenLabel := na
+    if not na(trueDayOpenLine)
+        line.delete(trueDayOpenLine)
+        trueDayOpenLine := na
+    if not na(trueDayOpenLabel)
+        label.delete(trueDayOpenLabel)
+        trueDayOpenLabel := na
+    if not na(prevDayHighLine)
+        line.delete(prevDayHighLine)
+        prevDayHighLine := na
+    if not na(prevDayHighLabel)
+        label.delete(prevDayHighLabel)
+        prevDayHighLabel := na
+    if not na(prevDayLowLine)
+        line.delete(prevDayLowLine)
+        prevDayLowLine := na
+    if not na(prevDayLowLabel)
+        label.delete(prevDayLowLabel)
+        prevDayLowLabel := na
+    if not na(prevWeekHighLine)
+        line.delete(prevWeekHighLine)
+        prevWeekHighLine := na
+    if not na(prevWeekHighLabel)
+        label.delete(prevWeekHighLabel)
+        prevWeekHighLabel := na
+    if not na(prevWeekLowLine)
+        line.delete(prevWeekLowLine)
+        prevWeekLowLine := na
+    if not na(prevWeekLowLabel)
+        label.delete(prevWeekLowLabel)
+        prevWeekLowLabel := na
+    if not na(currentWeekHighLine)
+        line.delete(currentWeekHighLine)
+        currentWeekHighLine := na
+    if not na(currentWeekHighLabel)
+        label.delete(currentWeekHighLabel)
+        currentWeekHighLabel := na
+    if not na(currentWeekLowLine)
+        line.delete(currentWeekLowLine)
+        currentWeekLowLine := na
+    if not na(currentWeekLowLabel)
+        label.delete(currentWeekLowLabel)
+        currentWeekLowLabel := na
+    if not na(yearlyHighLine)
+        line.delete(yearlyHighLine)
+        yearlyHighLine := na
+    if not na(yearlyHighLabel)
+        label.delete(yearlyHighLabel)
+        yearlyHighLabel := na
+    if not na(yearlyLowLine)
+        line.delete(yearlyLowLine)
+        yearlyLowLine := na
+    if not na(yearlyLowLabel)
+        label.delete(yearlyLowLabel)
+        yearlyLowLabel := na
+    if not na(asiaHighLine)
+        line.delete(asiaHighLine)
+        asiaHighLine := na
+    if not na(asiaHighLabel)
+        label.delete(asiaHighLabel)
+        asiaHighLabel := na
+    if not na(asiaLowLine)
+        line.delete(asiaLowLine)
+        asiaLowLine := na
+    if not na(asiaLowLabel)
+        label.delete(asiaLowLabel)
+        asiaLowLabel := na
     sydneyHigh := na
     sydneyLow := na
     asiaHigh := na
@@ -317,6 +416,204 @@ if showLondon
     // Session ended
     else if not currentlyInLondon and inLondonSession
         inLondonSession := false
+
+// Level Lines Variables
+var line currentDayOpenLine = na
+var line trueDayOpenLine = na
+var line prevDayHighLine = na
+var line prevDayLowLine = na
+var line prevWeekHighLine = na
+var line prevWeekLowLine = na
+var line currentWeekHighLine = na
+var line currentWeekLowLine = na
+var line yearlyHighLine = na
+var line yearlyLowLine = na
+var line asiaHighLine = na
+var line asiaLowLine = na
+
+var label currentDayOpenLabel = na
+var label trueDayOpenLabel = na
+var label prevDayHighLabel = na
+var label prevDayLowLabel = na
+var label prevWeekHighLabel = na
+var label prevWeekLowLabel = na
+var label currentWeekHighLabel = na
+var label currentWeekLowLabel = na
+var label yearlyHighLabel = na
+var label yearlyLowLabel = na
+var label asiaHighLabel = na
+var label asiaLowLabel = na
+
+// Track breach status
+var bool currentDayOpenBreached = false
+var bool trueDayOpenBreached = false
+var bool prevDayHighBreached = false
+var bool prevDayLowBreached = false
+var bool prevWeekHighBreached = false
+var bool prevWeekLowBreached = false
+var bool currentWeekHighBreached = false
+var bool currentWeekLowBreached = false
+var bool yearlyHighBreached = false
+var bool yearlyLowBreached = false
+var bool asiaHighBreached = false
+var bool asiaLowBreached = false
+
+// Function to check if price has breached a level
+breachCheck(level, lineVar, breached) =>
+    result = breached
+    if not na(level) and not breached
+        if (low[1] > level and low <= level) or (high[1] < level and high >= level)
+            result := true
+            if not na(lineVar)
+                line.set_x2(lineVar, bar_index)
+                line.set_extend(lineVar, extend.none)
+    result
+
+// Function to draw or update a level line
+drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, breached) =>
+    var line localLine = lineVar
+    var label localLabel = labelVar
+    
+    if condition and not na(level) and not breached
+        // Delete old line and label if they exist
+        if not na(localLine)
+            line.delete(localLine)
+        if not na(localLabel)
+            label.delete(localLabel)
+        
+        // Create new line with dotted style
+        localLine := line.new(bar_index, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
+        
+        // Create label if enabled
+        if showLevelLabels
+            futureTime = time + (time - time[1]) * 500
+            localLabel := label.new(futureTime, level, labelText, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
+    
+    // Update label position if it exists
+    if not na(localLabel) and not breached
+        futureTime = time + (time - time[1]) * 500
+        label.set_x(localLabel, futureTime)
+    
+    [localLine, localLabel]
+
+// Get daily data
+[dailyHigh, dailyLow, dailyOpen] = request.security(syminfo.tickerid, "D", [high, low, open], lookahead=barmerge.lookahead_on)
+[prevDayHigh, prevDayLow] = request.security(syminfo.tickerid, "D", [high[1], low[1]], lookahead=barmerge.lookahead_on)
+
+// Get weekly data
+[weeklyHigh, weeklyLow] = request.security(syminfo.tickerid, "W", [high, low], lookahead=barmerge.lookahead_on)
+[prevWeekHigh, prevWeekLow] = request.security(syminfo.tickerid, "W", [high[1], low[1]], lookahead=barmerge.lookahead_on)
+
+// Get yearly data
+[yearlyHighVal, yearlyLowVal] = request.security(syminfo.tickerid, "12M", [high, low], lookahead=barmerge.lookahead_on)
+
+// Track True Day Open (midnight ET)
+var float trueDayOpenPrice = na
+isMidnightET = currentHourET == 0 and currentMinuteET == 0
+if isMidnightET
+    trueDayOpenPrice := open
+    trueDayOpenBreached := false
+
+// Track Current Day Open (6pm ET)
+var float currentDayOpenPrice = na
+if isNewDayStart
+    currentDayOpenPrice := open
+    currentDayOpenBreached := false
+    // Reset all breach flags at new day
+    prevDayHighBreached := false
+    prevDayLowBreached := false
+    prevWeekHighBreached := false
+    prevWeekLowBreached := false
+    currentWeekHighBreached := false
+    currentWeekLowBreached := false
+    yearlyHighBreached := false
+    yearlyLowBreached := false
+    asiaHighBreached := false
+    asiaLowBreached := false
+
+// Draw level lines if enabled
+if showLevels
+    // Current Day Open (6pm ET)
+    if showCurrentDayOpen and not na(currentDayOpenPrice)
+        currentDayOpenBreached := breachCheck(currentDayOpenPrice, currentDayOpenLine, currentDayOpenBreached)
+        [newLine, newLabel] = drawLevelLine(true, currentDayOpenPrice, currentDayOpenLine, currentDayOpenLabel, currentDayOpenColor, "Current Day Open", currentDayOpenBreached)
+        currentDayOpenLine := newLine
+        currentDayOpenLabel := newLabel
+    
+    // True Day Open (12am ET)
+    if showTrueDayOpen and not na(trueDayOpenPrice)
+        trueDayOpenBreached := breachCheck(trueDayOpenPrice, trueDayOpenLine, trueDayOpenBreached)
+        [newLine, newLabel] = drawLevelLine(true, trueDayOpenPrice, trueDayOpenLine, trueDayOpenLabel, trueDayOpenColor, "True Day Open", trueDayOpenBreached)
+        trueDayOpenLine := newLine
+        trueDayOpenLabel := newLabel
+    
+    // Previous Day High/Low
+    if showPrevDayHL
+        if not na(prevDayHigh)
+            prevDayHighBreached := breachCheck(prevDayHigh, prevDayHighLine, prevDayHighBreached)
+            [newLine, newLabel] = drawLevelLine(true, prevDayHigh, prevDayHighLine, prevDayHighLabel, prevDayHighColor, "PDH", prevDayHighBreached)
+            prevDayHighLine := newLine
+            prevDayHighLabel := newLabel
+        
+        if not na(prevDayLow)
+            prevDayLowBreached := breachCheck(prevDayLow, prevDayLowLine, prevDayLowBreached)
+            [newLine, newLabel] = drawLevelLine(true, prevDayLow, prevDayLowLine, prevDayLowLabel, prevDayLowColor, "PDL", prevDayLowBreached)
+            prevDayLowLine := newLine
+            prevDayLowLabel := newLabel
+    
+    // Previous Week High/Low
+    if showPrevWeekHL
+        if not na(prevWeekHigh)
+            prevWeekHighBreached := breachCheck(prevWeekHigh, prevWeekHighLine, prevWeekHighBreached)
+            [newLine, newLabel] = drawLevelLine(true, prevWeekHigh, prevWeekHighLine, prevWeekHighLabel, prevWeekHighColor, "PWH", prevWeekHighBreached)
+            prevWeekHighLine := newLine
+            prevWeekHighLabel := newLabel
+        
+        if not na(prevWeekLow)
+            prevWeekLowBreached := breachCheck(prevWeekLow, prevWeekLowLine, prevWeekLowBreached)
+            [newLine, newLabel] = drawLevelLine(true, prevWeekLow, prevWeekLowLine, prevWeekLowLabel, prevWeekLowColor, "PWL", prevWeekLowBreached)
+            prevWeekLowLine := newLine
+            prevWeekLowLabel := newLabel
+    
+    // Current Week High/Low
+    if showCurrentWeekHL
+        if not na(weeklyHigh)
+            currentWeekHighBreached := breachCheck(weeklyHigh, currentWeekHighLine, currentWeekHighBreached)
+            [newLine, newLabel] = drawLevelLine(true, weeklyHigh, currentWeekHighLine, currentWeekHighLabel, currentWeekHighColor, "CWH", currentWeekHighBreached)
+            currentWeekHighLine := newLine
+            currentWeekHighLabel := newLabel
+        
+        if not na(weeklyLow)
+            currentWeekLowBreached := breachCheck(weeklyLow, currentWeekLowLine, currentWeekLowBreached)
+            [newLine, newLabel] = drawLevelLine(true, weeklyLow, currentWeekLowLine, currentWeekLowLabel, currentWeekLowColor, "CWL", currentWeekLowBreached)
+            currentWeekLowLine := newLine
+            currentWeekLowLabel := newLabel
+    
+    // Yearly High/Low
+    if showYearlyHL
+        if not na(yearlyHighVal)
+            yearlyHighBreached := breachCheck(yearlyHighVal, yearlyHighLine, yearlyHighBreached)
+            [newLine, newLabel] = drawLevelLine(true, yearlyHighVal, yearlyHighLine, yearlyHighLabel, yearlyHighColor, "Yearly High", yearlyHighBreached)
+            yearlyHighLine := newLine
+            yearlyHighLabel := newLabel
+        
+        if not na(yearlyLowVal)
+            yearlyLowBreached := breachCheck(yearlyLowVal, yearlyLowLine, yearlyLowBreached)
+            [newLine, newLabel] = drawLevelLine(true, yearlyLowVal, yearlyLowLine, yearlyLowLabel, yearlyLowColor, "Yearly Low", yearlyLowBreached)
+            yearlyLowLine := newLine
+            yearlyLowLabel := newLabel
+    
+    // Asia Session High/Low
+    if showAsiaHL and not na(asiaHigh) and not na(asiaLow) and not inAsiaSession
+        asiaHighBreached := breachCheck(asiaHigh, asiaHighLine, asiaHighBreached)
+        [newLine, newLabel] = drawLevelLine(true, asiaHigh, asiaHighLine, asiaHighLabel, asiaHighColor, "Asia High", asiaHighBreached)
+        asiaHighLine := newLine
+        asiaHighLabel := newLabel
+        
+        asiaLowBreached := breachCheck(asiaLow, asiaLowLine, asiaLowBreached)
+        [newLine, newLabel] = drawLevelLine(true, asiaLow, asiaLowLine, asiaLowLabel, asiaLowColor, "Asia Low", asiaLowBreached)
+        asiaLowLine := newLine
+        asiaLowLabel := newLabel
 
 // Alert conditions
 alertcondition(currentlyInSydney and not inSydneySession[1], title="Sydney Session Start", message="Sydney session has started")
