@@ -956,14 +956,14 @@ if showFVG and is15MinBar
             currentFVG = array.get(fvgArray, i)
             
             if not currentFVG.mitigated
-                // Check for midpoint breach
+                // Check for midpoint breach (including wicks)
                 if not currentFVG.midpointBreached
                     breached = false
                     if currentFVG.isBullish
-                        // Bullish FVG midpoint breached when price goes below midpoint
+                        // Bullish FVG midpoint breached when any part of candle (including wick) touches or goes below midpoint
                         breached := low <= currentFVG.midpoint
                     else
-                        // Bearish FVG midpoint breached when price goes above midpoint
+                        // Bearish FVG midpoint breached when any part of candle (including wick) touches or goes above midpoint
                         breached := high >= currentFVG.midpoint
                     
                     if breached
