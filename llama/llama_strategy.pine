@@ -956,7 +956,7 @@ if showFVG and is15MinBar
             currentFVG = array.get(fvgArray, i)
             
             if not currentFVG.mitigated
-                // First check for midpoint breach (stop extending to the right)
+                // Check for midpoint breach
                 if not currentFVG.midpointBreached
                     breached = false
                     if currentFVG.isBullish
@@ -968,22 +968,13 @@ if showFVG and is15MinBar
                     
                     if breached
                         currentFVG.midpointBreached := true
-                        // Delete and recreate the box without extension to ensure it stops
-                        boxLeft = box.get_left(currentFVG.fvgBox)
-                        boxTop = box.get_top(currentFVG.fvgBox)
-                        boxBottom = box.get_bottom(currentFVG.fvgBox)
-                        // Use the appropriate color based on FVG type
-                        boxColor = currentFVG.isBullish ? fvgBullishColor : fvgBearishColor
-                        box.delete(currentFVG.fvgBox)
-                        currentFVG.fvgBox := box.new(boxLeft, boxTop, bar_index, boxBottom, bgcolor=boxColor, border_color=na, extend=extend.none)
-                        
-                        // Delete and recreate the midline without extension
-                        lineLeft = line.get_x1(currentFVG.midLine)
-                        lineY = line.get_y1(currentFVG.midLine)
-                        line.delete(currentFVG.midLine)
-                        currentFVG.midLine := line.new(lineLeft, lineY, bar_index, lineY, color=fvgMidlineColor, width=fvgMidlineWidth, style=line.style_solid, extend=extend.none)
-                // Note: If midpoint was already breached, we don't update the box anymore
-                // The box stays frozen at the breach point
+                        // Set both box and line to stop extending
+                        box.set_extend(currentFVG.fvgBox, extend.none)
+                        line.set_extend(currentFVG.midLine, extend.none)
+                        // Update their right edges to current position
+                        box.set_right(currentFVG.fvgBox, bar_index)
+                        line.set_x2(currentFVG.midLine, bar_index)
+                // Note: If already breached, do nothing - box stays frozen at breach point
                 
                 // Then check for full mitigation (price completely passes through the entire gap)
                 if currentFVG.isBullish
