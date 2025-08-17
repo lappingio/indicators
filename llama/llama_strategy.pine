@@ -909,10 +909,8 @@ if showFVG and timeframe.isintraday and timeframe.multiplier <= 15
             newFVG.startBar := bar_index
             
             // Create box and midline
-            newFVG.fvgBox := box.new(bar_index, bullishGapTop, bar_index + 1, bullishGapBottom, 
-                bgcolor=fvgBullishColor, border_color=na, extend=extend.right)
-            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, 
-                color=fvgMidlineColor, width=1, style=line.style_dotted, extend=extend.right)
+            newFVG.fvgBox := box.new(bar_index, bullishGapTop, bar_index + 1, bullishGapBottom, bgcolor=fvgBullishColor, border_color=na, extend=extend.right)
+            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, color=fvgMidlineColor, width=1, style=line.style_dotted, extend=extend.right)
             
             // Add to array (manage max count)
             if array.size(fvgArray) >= maxFVGs
@@ -934,10 +932,8 @@ if showFVG and timeframe.isintraday and timeframe.multiplier <= 15
             newFVG.startBar := bar_index
             
             // Create box and midline
-            newFVG.fvgBox := box.new(bar_index, bearishGapTop, bar_index + 1, bearishGapBottom, 
-                bgcolor=fvgBearishColor, border_color=na, extend=extend.right)
-            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, 
-                color=fvgMidlineColor, width=1, style=line.style_dotted, extend=extend.right)
+            newFVG.fvgBox := box.new(bar_index, bearishGapTop, bar_index + 1, bearishGapBottom, bgcolor=fvgBearishColor, border_color=na, extend=extend.right)
+            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, color=fvgMidlineColor, width=1, style=line.style_dotted, extend=extend.right)
             
             // Add to array (manage max count)
             if array.size(fvgArray) >= maxFVGs
