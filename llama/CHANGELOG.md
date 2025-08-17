@@ -1,5 +1,12 @@
 # Llama Strategy Indicator Changelog
 
+## [1.4.2] - 2025-01-17
+
+### Fixed
+- **FVG Midpoint Breach**: Fixed issue where FVG boxes continued extending after midpoint was breached
+  - Now properly freezes box extension when any candle trades through the midpoint
+  - Recreates box and midline without extension to ensure proper freezing
+
 ## [1.4.1] - 2025-01-17
 
 ### Changed

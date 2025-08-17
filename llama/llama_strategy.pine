@@ -958,22 +958,32 @@ if showFVG and is15MinBar
             if not currentFVG.mitigated
                 // First check for midpoint breach (stop extending to the right)
                 if not currentFVG.midpointBreached
+                    breached = false
                     if currentFVG.isBullish
                         // Bullish FVG midpoint breached when price goes below midpoint
-                        if low <= currentFVG.midpoint
-                            currentFVG.midpointBreached := true
-                            box.set_extend(currentFVG.fvgBox, extend.none)
-                            box.set_right(currentFVG.fvgBox, bar_index)
-                            line.set_extend(currentFVG.midLine, extend.none)
-                            line.set_x2(currentFVG.midLine, bar_index)
+                        breached := low <= currentFVG.midpoint
                     else
                         // Bearish FVG midpoint breached when price goes above midpoint
-                        if high >= currentFVG.midpoint
-                            currentFVG.midpointBreached := true
-                            box.set_extend(currentFVG.fvgBox, extend.none)
-                            box.set_right(currentFVG.fvgBox, bar_index)
-                            line.set_extend(currentFVG.midLine, extend.none)
-                            line.set_x2(currentFVG.midLine, bar_index)
+                        breached := high >= currentFVG.midpoint
+                    
+                    if breached
+                        currentFVG.midpointBreached := true
+                        // Delete and recreate the box without extension to ensure it stops
+                        boxLeft = box.get_left(currentFVG.fvgBox)
+                        boxTop = box.get_top(currentFVG.fvgBox)
+                        boxBottom = box.get_bottom(currentFVG.fvgBox)
+                        boxColor = box.get_bgcolor(currentFVG.fvgBox)
+                        box.delete(currentFVG.fvgBox)
+                        currentFVG.fvgBox := box.new(boxLeft, boxTop, bar_index, boxBottom, bgcolor=boxColor, border_color=na, extend=extend.none)
+                        
+                        // Delete and recreate the midline without extension
+                        lineLeft = line.get_x1(currentFVG.midLine)
+                        lineY = line.get_y1(currentFVG.midLine)
+                        lineColor = line.get_color(currentFVG.midLine)
+                        lineWidth = line.get_width(currentFVG.midLine)
+                        lineStyle = line.get_style(currentFVG.midLine)
+                        line.delete(currentFVG.midLine)
+                        currentFVG.midLine := line.new(lineLeft, lineY, bar_index, lineY, color=lineColor, width=lineWidth, style=lineStyle, extend=extend.none)
                 // Note: If midpoint was already breached, we don't update the box anymore
                 // The box stays frozen at the breach point
                 
