@@ -123,6 +123,57 @@ var label fib786Label = na
 var label fibNeg236Label = na
 var label fibNeg786Label = na
 
+// Level Lines Variables
+var line currentDayOpenLine = na
+var line trueDayOpenLine = na
+var line prevDayHighLine = na
+var line prevDayLowLine = na
+var line prevDayMidLine = na
+var line prevWeekHighLine = na
+var line prevWeekLowLine = na
+var line prevWeekMidLine = na
+var line prevMonthHighLine = na
+var line prevMonthLowLine = na
+var line prevMonthMidLine = na
+var line currentWeekHighLine = na
+var line currentWeekLowLine = na
+var line currentWeekMidLine = na
+var line yearlyHighLine = na
+var line yearlyLowLine = na
+var line yearlyMidLine = na
+var line asiaHighLine = na
+var line asiaLowLine = na
+var line londonHighLine = na
+var line londonLowLine = na
+
+var label currentDayOpenLabel = na
+var label trueDayOpenLabel = na
+var label prevDayHighLabel = na
+var label prevDayLowLabel = na
+var label prevDayMidLabel = na
+var label prevWeekHighLabel = na
+var label prevWeekLowLabel = na
+var label prevWeekMidLabel = na
+var label prevMonthHighLabel = na
+var label prevMonthLowLabel = na
+var label prevMonthMidLabel = na
+var label currentWeekHighLabel = na
+var label currentWeekLowLabel = na
+var label currentWeekMidLabel = na
+var label yearlyHighLabel = na
+var label yearlyLowLabel = na
+var label yearlyMidLabel = na
+var label asiaHighLabel = na
+var label asiaLowLabel = na
+var label londonHighLabel = na
+var label londonLowLabel = na
+
+// Track breach status for Asia and London sessions
+var bool asiaHighBreached = false
+var bool asiaLowBreached = false
+var bool londonHighBreached = false
+var bool londonLowBreached = false
+
 // Check if we're in a session
 isInSession(sessionTime) =>
     not na(time(timeframe.period, sessionTime, timezone))
@@ -501,57 +552,6 @@ if showLondon
     // Session ended
     else if not currentlyInLondon and inLondonSession
         inLondonSession := false
-
-// Level Lines Variables
-var line currentDayOpenLine = na
-var line trueDayOpenLine = na
-var line prevDayHighLine = na
-var line prevDayLowLine = na
-var line prevDayMidLine = na
-var line prevWeekHighLine = na
-var line prevWeekLowLine = na
-var line prevWeekMidLine = na
-var line prevMonthHighLine = na
-var line prevMonthLowLine = na
-var line prevMonthMidLine = na
-var line currentWeekHighLine = na
-var line currentWeekLowLine = na
-var line currentWeekMidLine = na
-var line yearlyHighLine = na
-var line yearlyLowLine = na
-var line yearlyMidLine = na
-var line asiaHighLine = na
-var line asiaLowLine = na
-var line londonHighLine = na
-var line londonLowLine = na
-
-var label currentDayOpenLabel = na
-var label trueDayOpenLabel = na
-var label prevDayHighLabel = na
-var label prevDayLowLabel = na
-var label prevDayMidLabel = na
-var label prevWeekHighLabel = na
-var label prevWeekLowLabel = na
-var label prevWeekMidLabel = na
-var label prevMonthHighLabel = na
-var label prevMonthLowLabel = na
-var label prevMonthMidLabel = na
-var label currentWeekHighLabel = na
-var label currentWeekLowLabel = na
-var label currentWeekMidLabel = na
-var label yearlyHighLabel = na
-var label yearlyLowLabel = na
-var label yearlyMidLabel = na
-var label asiaHighLabel = na
-var label asiaLowLabel = na
-var label londonHighLabel = na
-var label londonLowLabel = na
-
-// Track breach status for Asia and London sessions
-var bool asiaHighBreached = false
-var bool asiaLowBreached = false
-var bool londonHighBreached = false
-var bool londonLowBreached = false
 
 // Function to check if price has breached a level
 breachCheck(level, lineVar, breached) =>
