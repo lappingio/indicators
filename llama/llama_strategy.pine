@@ -40,9 +40,6 @@ getTextSize(size) =>
 var box sydneyBox = na
 var box asiaBox = na
 var box londonBox = na
-var label sydneyLabel = na
-var label asiaLabel = na
-var label londonLabel = na
 var float sydneyHigh = na
 var float sydneyLow = na
 var float asiaHigh = na
@@ -93,15 +90,6 @@ if isNewDayStart
     if not na(londonBox)
         box.delete(londonBox)
         londonBox := na
-    if not na(sydneyLabel)
-        label.delete(sydneyLabel)
-        sydneyLabel := na
-    if not na(asiaLabel)
-        label.delete(asiaLabel)
-        asiaLabel := na
-    if not na(londonLabel)
-        label.delete(londonLabel)
-        londonLabel := na
     // Delete fibonacci lines and labels
     if not na(fib236Line)
         line.delete(fib236Line)
@@ -159,15 +147,9 @@ if showSydney
         // Delete old box if exists
         if not na(sydneyBox)
             box.delete(sydneyBox)
-        if not na(sydneyLabel)
-            label.delete(sydneyLabel)
         
-        // Create new box
-        sydneyBox := box.new(bar_index, high, bar_index, low, border_color=color.new(sydneyColor, 20), border_width=boxBorderWidth, bgcolor=sydneyColor)
-        
-        // Create label
-        if showSessionLabels
-            sydneyLabel := label.new(bar_index, high, "Sydney", style=label.style_label_down, color=color.new(sydneyColor, 0), textcolor=textColor, size=getTextSize(textSize))
+        // Create new box with text
+        sydneyBox := box.new(bar_index, high, bar_index, low, border_color=color.new(sydneyColor, 20), border_width=boxBorderWidth, bgcolor=sydneyColor, text=showSessionLabels ? "SYDNEY" : "", text_color=textColor, text_size=getTextSize(textSize))
     
     // Update box during session
     else if currentlyInSydney and inSydneySession
@@ -175,10 +157,6 @@ if showSydney
             box.set_right(sydneyBox, bar_index)
             box.set_top(sydneyBox, sydneyHigh)
             box.set_bottom(sydneyBox, sydneyLow)
-        
-        if showSessionLabels and not na(sydneyLabel)
-            label.set_x(sydneyLabel, bar_index)
-            label.set_y(sydneyLabel, sydneyHigh)
 
 // Asia Session
 currentlyInAsia = isInSession(asiaSession)
@@ -189,15 +167,9 @@ if showAsia
         // Delete old box if exists
         if not na(asiaBox)
             box.delete(asiaBox)
-        if not na(asiaLabel)
-            label.delete(asiaLabel)
         
-        // Create new box
-        asiaBox := box.new(bar_index, high, bar_index, low, border_color=color.new(asiaColor, 20), border_width=boxBorderWidth, bgcolor=asiaColor)
-        
-        // Create label
-        if showSessionLabels
-            asiaLabel := label.new(bar_index, high, "Asia", style=label.style_label_down, color=color.new(asiaColor, 0), textcolor=textColor, size=getTextSize(textSize))
+        // Create new box with text
+        asiaBox := box.new(bar_index, high, bar_index, low, border_color=color.new(asiaColor, 20), border_width=boxBorderWidth, bgcolor=asiaColor, text=showSessionLabels ? "ASIA" : "", text_color=textColor, text_size=getTextSize(textSize))
         
         asiaHigh := high
         asiaLow := low
@@ -213,10 +185,6 @@ if showAsia
             box.set_right(asiaBox, bar_index)
             box.set_top(asiaBox, asiaHigh)
             box.set_bottom(asiaBox, asiaLow)
-        
-        if showSessionLabels and not na(asiaLabel)
-            label.set_x(asiaLabel, bar_index)
-            label.set_y(asiaLabel, asiaHigh)
     
     // Session ended
     else if not currentlyInAsia and inAsiaSession
@@ -327,15 +295,9 @@ if showLondon
         // Delete old box if exists
         if not na(londonBox)
             box.delete(londonBox)
-        if not na(londonLabel)
-            label.delete(londonLabel)
         
-        // Create new box
-        londonBox := box.new(bar_index, high, bar_index, low, border_color=color.new(londonColor, 20), border_width=boxBorderWidth, bgcolor=londonColor)
-        
-        // Create label
-        if showSessionLabels
-            londonLabel := label.new(bar_index, high, "London", style=label.style_label_down, color=color.new(londonColor, 0), textcolor=textColor, size=getTextSize(textSize))
+        // Create new box with text
+        londonBox := box.new(bar_index, high, bar_index, low, border_color=color.new(londonColor, 20), border_width=boxBorderWidth, bgcolor=londonColor, text=showSessionLabels ? "LONDON" : "", text_color=textColor, text_size=getTextSize(textSize))
         
         londonHigh := high
         londonLow := low
@@ -351,10 +313,6 @@ if showLondon
             box.set_right(londonBox, bar_index)
             box.set_top(londonBox, londonHigh)
             box.set_bottom(londonBox, londonLow)
-        
-        if showSessionLabels and not na(londonLabel)
-            label.set_x(londonLabel, bar_index)
-            label.set_y(londonLabel, londonHigh)
     
     // Session ended
     else if not currentlyInLondon and inLondonSession
