@@ -1,10 +1,10 @@
-# Llama Strategy Indicator
+# Llama P2P Indicator
 
 A TradingView Pine Script indicator that tracks overnight forex sessions and automatically generates Fibonacci retracement levels for intraday trading.
 
 ## Overview
 
-The Llama Strategy indicator visualizes three major forex sessions (Sydney, Asia, London) and automatically calculates Fibonacci retracement levels based on the overnight range between Sydney and Asia sessions.
+The Llama P2P indicator visualizes three major forex sessions (Sydney, Asia, London) and automatically calculates Fibonacci retracement levels based on the overnight range between Sydney and Asia sessions.
 
 ## Features
 
@@ -104,7 +104,7 @@ The indicator automatically detects and displays Fair Value Gaps from the 15-min
 
 ## Trading Strategy
 
-The Llama strategy uses overnight session ranges to identify key support and resistance levels for the upcoming trading day. The Fibonacci retracement levels provide potential entry and exit points based on the overnight price action between Sydney and Asia sessions.
+The Llama P2P uses overnight session ranges to identify key support and resistance levels for the upcoming trading day. The Fibonacci retracement levels provide potential entry and exit points based on the overnight price action between Sydney and Asia sessions.
 
 ## Notes
 

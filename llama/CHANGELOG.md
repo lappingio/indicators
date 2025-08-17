@@ -1,4 +1,21 @@
-# Llama Strategy Indicator Changelog
+# Llama P2P Indicator Changelog
+
+## [1.4.3] - 2025-01-17
+
+### Changed
+- **Indicator Name**: Renamed from "Llama Strategy" to "Llama P2P"
+
+### Fixed
+- **Session Label Format**: Session level labels now show decimal prices instead of "price" text
+  - Asia and London session labels now match other level label formatting
+  - Both active and breached session labels use consistent decimal format
+- **Current Week High/Low**: Fixed real-time updating for current week levels
+  - Use `lookahead_off` for current week and year to get real-time values
+  - Lines and labels now update Y position when levels change
+  - Levels properly recalculate as new highs/lows are made
+- **Label Distance**: Fixed label offset to work correctly
+  - Changed from time-based to bar-based positioning
+  - Labels now properly respect the configured distance in bars
 
 ## [1.4.2] - 2025-01-17
 
