@@ -634,11 +634,11 @@ drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startB
         if showLevelLabels
             labelWithPrice = labelText + " (" + str.tostring(level, "#.#####") + ")"
             if na(localLabel)
-                futureTime = time + (time - time[1]) * labelOffset
-                localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
+                labelX = bar_index + labelOffset
+                localLabel := label.new(labelX, level, labelWithPrice, xloc=xloc.bar_index, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
             else
-                futureTime = time + (time - time[1]) * labelOffset
-                label.set_x(localLabel, futureTime)
+                labelX = bar_index + labelOffset
+                label.set_x(localLabel, labelX)
                 label.set_y(localLabel, level)
                 label.set_text(localLabel, labelWithPrice)
     
@@ -667,22 +667,22 @@ drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText,
             if showLevelLabels
                 labelWithPrice = labelText + " (" + str.tostring(level, "#.#####") + ")"
                 if na(localLabel)
-                    futureTime = time + (time - time[1]) * labelOffset
-                    localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
+                    labelX = bar_index + labelOffset
+                    localLabel := label.new(labelX, level, labelWithPrice, xloc=xloc.bar_index, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
                 else
-                    futureTime = time + (time - time[1]) * labelOffset
-                    label.set_x(localLabel, futureTime)
+                    labelX = bar_index + labelOffset
+                    label.set_x(localLabel, labelX)
                     label.set_text(localLabel, labelWithPrice)
         else
             // Line has been breached - keep label but change color to gray
             if showLevelLabels
                 labelWithPrice = labelText + " (" + str.tostring(level, "#.#####") + ")"
                 if na(localLabel)
-                    futureTime = time + (time - time[1]) * labelOffset
-                    localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=color.gray, size=getTextSize(textSize))
+                    labelX = bar_index + labelOffset
+                    localLabel := label.new(labelX, level, labelWithPrice, xloc=xloc.bar_index, style=label.style_none, textcolor=color.gray, size=getTextSize(textSize))
                 else
-                    futureTime = time + (time - time[1]) * labelOffset
-                    label.set_x(localLabel, futureTime)
+                    labelX = bar_index + labelOffset
+                    label.set_x(localLabel, labelX)
                     label.set_text(localLabel, labelWithPrice)
                     label.set_textcolor(localLabel, color.gray)
     

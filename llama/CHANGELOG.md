@@ -13,6 +13,9 @@
   - Use `lookahead_off` for current week and year to get real-time values
   - Lines and labels now update Y position when levels change
   - Levels properly recalculate as new highs/lows are made
+- **Label Distance**: Fixed label offset to work correctly
+  - Changed from time-based to bar-based positioning
+  - Labels now properly respect the configured distance in bars
 
 ## [1.4.2] - 2025-01-17
 
