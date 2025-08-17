@@ -622,8 +622,10 @@ drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startB
         
         // Update existing line or create new one
         if not na(localLine)
-            // Just update the right side of existing line
+            // Update both position and price level
             line.set_x2(localLine, bar_index + 1)
+            line.set_y1(localLine, level)
+            line.set_y2(localLine, level)
         else
             // Create new line from the safe start bar index
             localLine := line.new(safeStartIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
@@ -637,6 +639,7 @@ drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startB
             else
                 futureTime = time + (time - time[1]) * labelOffset
                 label.set_x(localLabel, futureTime)
+                label.set_y(localLabel, level)
                 label.set_text(localLabel, labelWithPrice)
     
     [localLine, localLabel]
@@ -690,16 +693,32 @@ drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText,
 [prevDayHigh, prevDayLow] = request.security(syminfo.tickerid, "D", [high[1], low[1]], lookahead=barmerge.lookahead_on)
 
 // Get weekly data
-// For current week, use lookahead_off to get real-time updating values
-[weeklyHigh, weeklyLow] = request.security(syminfo.tickerid, "W", [high, low], lookahead=barmerge.lookahead_off)
+// Track current week high/low manually for real-time updates
+var float currentWeekHighValue = na
+var float currentWeekLowValue = na
+var int lastWeekTime = na
+
+// Check if we're in a new week
+currentWeekTime = time("W")
+if currentWeekTime != lastWeekTime
+    currentWeekHighValue := high
+    currentWeekLowValue := low
+    lastWeekTime := currentWeekTime
+    currentWeekStart := bar_index
+else
+    currentWeekHighValue := math.max(nz(currentWeekHighValue, high), high)
+    currentWeekLowValue := math.min(nz(currentWeekLowValue, low), low)
+
+// Use manual tracking for current week, request.security for previous week
+weeklyHigh = currentWeekHighValue
+weeklyLow = currentWeekLowValue
 [prevWeekHigh, prevWeekLow] = request.security(syminfo.tickerid, "W", [high[1], low[1]], lookahead=barmerge.lookahead_on)
 
 // Get monthly data
 [prevMonthHigh, prevMonthLow] = request.security(syminfo.tickerid, "M", [high[1], low[1]], lookahead=barmerge.lookahead_on)
 
 // Get yearly data
-// For current year, use lookahead_off to get real-time updating values
-[yearlyHighVal, yearlyLowVal] = request.security(syminfo.tickerid, "12M", [high, low], lookahead=barmerge.lookahead_off)
+[yearlyHighVal, yearlyLowVal] = request.security(syminfo.tickerid, "12M", [high, low], lookahead=barmerge.lookahead_on)
 
 // Track when new periods start
 var float lastPrevDayHigh = na
