@@ -292,10 +292,10 @@ if showFibs and asiaSessionEnded and not fibsDrawn and not na(sydneyHigh) and no
     if showFibLabels
         // Calculate a future time for label positioning
         futureTime = time + (time - time[1]) * 100  // 100 bars into the future
-        fib236Label := label.new(futureTime, fib236Level, "0.236 Overnight Retracement", xloc=xloc.bar_time, style=label.style_label_left, color=color.transparent, textcolor=fibColor, size=getTextSize(textSize))
-        fib786Label := label.new(futureTime, fib786Level, "0.786 Overnight Retracement", xloc=xloc.bar_time, style=label.style_label_left, color=color.transparent, textcolor=fibColor, size=getTextSize(textSize))
-        fibNeg236Label := label.new(futureTime, fibNeg236Level, "-0.236 Overnight Trend Extension", xloc=xloc.bar_time, style=label.style_label_left, color=color.transparent, textcolor=fibColor, size=getTextSize(textSize))
-        fibNeg786Label := label.new(futureTime, fibNeg786Level, "-0.786 Overnight Trend Extension", xloc=xloc.bar_time, style=label.style_label_left, color=color.transparent, textcolor=fibColor, size=getTextSize(textSize))
+        fib236Label := label.new(futureTime, fib236Level, "0.236 Overnight Retracement", xloc=xloc.bar_time, style=label.style_label_left, color=color.new(color.white, 100), textcolor=fibColor, size=getTextSize(textSize))
+        fib786Label := label.new(futureTime, fib786Level, "0.786 Overnight Retracement", xloc=xloc.bar_time, style=label.style_label_left, color=color.new(color.white, 100), textcolor=fibColor, size=getTextSize(textSize))
+        fibNeg236Label := label.new(futureTime, fibNeg236Level, "-0.236 Overnight Trend Extension", xloc=xloc.bar_time, style=label.style_label_left, color=color.new(color.white, 100), textcolor=fibColor, size=getTextSize(textSize))
+        fibNeg786Label := label.new(futureTime, fibNeg786Level, "-0.786 Overnight Trend Extension", xloc=xloc.bar_time, style=label.style_label_left, color=color.new(color.white, 100), textcolor=fibColor, size=getTextSize(textSize))
     
     fibsDrawn := true
 
