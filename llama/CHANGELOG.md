@@ -1,5 +1,20 @@
 # Llama Strategy Indicator Changelog
 
+## [1.2.0] - 2025-01-17
+
+### Added
+- **50% Midpoint Lines**: Added midpoint levels for all high/low pairs
+- **Previous Month Levels**: New triad for previous month High/Low/50%
+- **London Session Levels**: High/Low with breach detection
+- **Toggleable Triads**: Each set of levels (High/Low/50%) can be toggled as a group
+- **Unified Color Scheme**: Teal for standard levels, Purple for session levels
+
+### Changed
+- **Breach Detection**: Now only applies to Asia and London session levels
+- **Color Standardization**: All non-session levels now use teal color
+- **Session Lines**: Asia and London levels now use purple color
+- **Improved Organization**: Level lines grouped into triads with parent toggles
+
 ## [1.1.0] - 2025-01-17
 
 ### Added

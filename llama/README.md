@@ -25,21 +25,28 @@ After the Asia session ends, the indicator automatically draws Fibonacci retrace
 - -0.786 (78.6% extension)
 
 ### Level Lines
-The indicator draws horizontal level lines that extend to the right and terminate when breached by price:
+The indicator draws horizontal level lines with configurable triads (High/Low/50%):
+
+#### Standard Levels (Teal colored, no breach detection):
 - **Current Day Open**: Opens at 6pm ET (forex day start)
 - **True Day Open**: Opens at midnight (12am ET)
-- **Previous Day High/Low**: Yesterday's high and low levels
-- **Previous Week High/Low**: Last week's high and low levels
-- **Current Week High/Low**: Current week's developing high and low
-- **Yearly High/Low**: Current year's high and low levels
-- **Asia Session High/Low**: High and low from the most recent Asia session
+- **Previous Day Triad**: High/Low/50% from previous day
+- **Previous Week Triad**: High/Low/50% from previous week
+- **Previous Month Triad**: High/Low/50% from previous month
+- **Current Week Triad**: High/Low/50% from current week (updating)
+- **Yearly Triad**: High/Low/50% from current year
+
+#### Session Levels (Purple colored, with breach detection):
+- **Asia Session High/Low**: Terminates when price breaches
+- **London Session High/Low**: Terminates when price breaches
 
 All level lines:
 - Display as dotted lines for easy identification
-- Extend to the right until price breaches them
-- Terminate at the breach point
+- Standard levels extend indefinitely to the right
+- Session levels terminate at breach points
 - Reset daily at 6pm ET
-- Have customizable colors and optional labels
+- Each triad is toggleable as a group
+- Individual components (High/Low/50%) can be toggled within each triad
 
 ## Usage
 
