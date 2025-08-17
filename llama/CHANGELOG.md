@@ -3,7 +3,8 @@
 ## [1.4.0] - 2025-01-17
 
 ### Added
-- **Fair Value Gaps (FVGs)**: Automatic detection and display of FVGs on 15-minute and lower timeframes
+- **Fair Value Gaps (FVGs)**: Automatic detection and display of FVGs from 15-minute timeframe
+  - FVGs detected on 15-minute candles regardless of current chart timeframe
   - Bullish FVGs shown in purple semi-transparent boxes
   - Bearish FVGs shown in pink/fuchsia semi-transparent boxes
   - Midpoint lines in white dotted style

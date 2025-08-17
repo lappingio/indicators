@@ -880,19 +880,27 @@ if showLevels
         londonLowLabel := llLabel
 
 // =========================
-// Fair Value Gap Detection
+// Fair Value Gap Detection (15-minute timeframe)
 // =========================
-if showFVG and timeframe.isintraday and timeframe.multiplier <= 15
-    // Detect FVG - requires 3 candles
-    if bar_index >= 2
+// Get 15-minute data for FVG detection
+[fvg_high, fvg_low, fvg_close] = request.security(syminfo.tickerid, "15", [high, low, close], lookahead=barmerge.lookahead_off)
+[fvg_high1, fvg_low1] = request.security(syminfo.tickerid, "15", [high[1], low[1]], lookahead=barmerge.lookahead_off)
+[fvg_high2, fvg_low2] = request.security(syminfo.tickerid, "15", [high[2], low[2]], lookahead=barmerge.lookahead_off)
+
+// Check if we have a new 15-minute bar
+is15MinBar = ta.change(time("15")) != 0
+
+if showFVG and is15MinBar
+    // Detect FVG on 15-minute timeframe - requires 3 candles
+    if not na(fvg_high2) and not na(fvg_low2) and not na(fvg_high1) and not na(fvg_low1)
         // Bullish FVG: Gap up between candle[2] high and candle[0] low
-        bullishGapTop = low[0]
-        bullishGapBottom = high[2]
+        bullishGapTop = fvg_low
+        bullishGapBottom = fvg_high2
         bullishGapSize = bullishGapTop - bullishGapBottom
         
         // Bearish FVG: Gap down between candle[2] low and candle[0] high
-        bearishGapTop = low[2]
-        bearishGapBottom = high[0]
+        bearishGapTop = fvg_low2
+        bearishGapBottom = fvg_high
         bearishGapSize = bearishGapTop - bearishGapBottom
         
         // Check for Bullish FVG
@@ -952,16 +960,17 @@ if showFVG and timeframe.isintraday and timeframe.multiplier <= 15
             
             if not currentFVG.mitigated
                 // Check for full mitigation (price completely passes through the gap)
+                // Use actual price action, not just 15-minute closes
                 if currentFVG.isBullish
-                    // Bullish FVG is mitigated when price closes below the bottom
-                    if close < currentFVG.bottom
+                    // Bullish FVG is mitigated when price trades below the bottom
+                    if low < currentFVG.bottom
                         currentFVG.mitigated := true
                         box.delete(currentFVG.fvgBox)
                         line.delete(currentFVG.midLine)
                         array.push(toRemove, i)
                 else
-                    // Bearish FVG is mitigated when price closes above the top
-                    if close > currentFVG.top
+                    // Bearish FVG is mitigated when price trades above the top
+                    if high > currentFVG.top
                         currentFVG.mitigated := true
                         box.delete(currentFVG.fvgBox)
                         line.delete(currentFVG.midLine)
