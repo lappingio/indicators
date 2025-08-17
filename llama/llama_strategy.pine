@@ -1,0 +1,362 @@
+//@version=6
+indicator("Llama Strategy", overlay=true, max_boxes_count=500)
+
+// Input parameters
+showSydney = input.bool(false, "Show Sydney Session", group="Sessions")
+showAsia = input.bool(true, "Show Asia Session", group="Sessions")
+showLondon = input.bool(true, "Show London Session", group="Sessions")
+showSessionLabels = input.bool(true, "Show Session Labels", group="Sessions")
+
+// Session times (in exchange timezone, will convert to ET)
+sydneySession = input.session("1800-0300", "Sydney Session (6pm-3am ET)", group="Session Times")
+asiaSession = input.session("2000-0500", "Asia Session (8pm-5am ET)", group="Session Times")
+londonSession = input.session("0300-1200", "London Session (3am-12pm ET)", group="Session Times") 
+
+// Visual settings
+sydneyColor = input.color(color.new(color.yellow, 80), "Sydney Session Color", group="Colors")
+asiaColor = input.color(color.new(color.blue, 80), "Asia Session Color", group="Colors")
+londonColor = input.color(color.new(color.red, 80), "London Session Color", group="Colors")
+fibColor = input.color(color.new(color.rgb(255, 215, 0), 0), "Fibonacci Color", group="Colors")  // Gold color
+boxBorderWidth = input.int(1, "Box Border Width", minval=0, maxval=5, group="Visual")
+textColor = input.color(color.white, "Label Text Color", group="Colors")
+textSize = input.string("normal", "Label Size", options=["tiny", "small", "normal", "large"], group="Visual")
+showFibs = input.bool(true, "Show Fibonacci Retracement", group="Fibonacci")
+fibLineWidth = input.int(1, "Fib Line Width", minval=1, maxval=5, group="Fibonacci")
+showFibLabels = input.bool(true, "Show Fib Level Labels", group="Fibonacci")
+
+// Timezone setting (ET = Eastern Time)
+timezone = "America/New_York"
+
+// Convert text size to Pine Script size
+getTextSize(size) =>
+    switch size
+        "tiny" => size.tiny
+        "small" => size.small
+        "normal" => size.normal
+        "large" => size.large
+        => size.normal
+
+// Session tracking variables
+var box sydneyBox = na
+var box asiaBox = na
+var box londonBox = na
+var label sydneyLabel = na
+var label asiaLabel = na
+var label londonLabel = na
+var float sydneyHigh = na
+var float sydneyLow = na
+var float asiaHigh = na
+var float asiaLow = na
+var float londonHigh = na
+var float londonLow = na
+var int sydneyStartTime = na
+var int asiaStartTime = na
+var int londonStartTime = na
+var bool inSydneySession = false
+var bool inAsiaSession = false
+var bool inLondonSession = false
+var int lastDayStart = na
+var bool asiaSessionEnded = false
+var bool fibsDrawn = false
+
+// Fibonacci lines and labels
+var line fib236Line = na
+var line fib786Line = na
+var line fibNeg236Line = na
+var line fibNeg786Line = na
+var label fib236Label = na
+var label fib786Label = na
+var label fibNeg236Label = na
+var label fibNeg786Label = na
+
+// Check if we're in a session
+isInSession(sessionTime) =>
+    not na(time(timeframe.period, sessionTime, timezone))
+
+// Get current ET hour
+currentHourET = hour(time, timezone)
+currentMinuteET = minute(time, timezone)
+
+// Check if it's 6pm ET (new day start in forex)
+isNewDayStart = currentHourET == 18 and currentMinuteET == 0
+
+// Note: Cannot use function to delete fibs due to Pine Script global variable restrictions
+
+// Delete previous day's boxes and fibs at 6pm ET
+if isNewDayStart
+    if not na(sydneyBox)
+        box.delete(sydneyBox)
+        sydneyBox := na
+    if not na(asiaBox)
+        box.delete(asiaBox)
+        asiaBox := na
+    if not na(londonBox)
+        box.delete(londonBox)
+        londonBox := na
+    if not na(sydneyLabel)
+        label.delete(sydneyLabel)
+        sydneyLabel := na
+    if not na(asiaLabel)
+        label.delete(asiaLabel)
+        asiaLabel := na
+    if not na(londonLabel)
+        label.delete(londonLabel)
+        londonLabel := na
+    // Delete fibonacci lines and labels
+    if not na(fib236Line)
+        line.delete(fib236Line)
+        fib236Line := na
+    if not na(fib786Line)
+        line.delete(fib786Line)
+        fib786Line := na
+    if not na(fibNeg236Line)
+        line.delete(fibNeg236Line)
+        fibNeg236Line := na
+    if not na(fibNeg786Line)
+        line.delete(fibNeg786Line)
+        fibNeg786Line := na
+    if not na(fib236Label)
+        label.delete(fib236Label)
+        fib236Label := na
+    if not na(fib786Label)
+        label.delete(fib786Label)
+        fib786Label := na
+    if not na(fibNeg236Label)
+        label.delete(fibNeg236Label)
+        fibNeg236Label := na
+    if not na(fibNeg786Label)
+        label.delete(fibNeg786Label)
+        fibNeg786Label := na
+    sydneyHigh := na
+    sydneyLow := na
+    asiaHigh := na
+    asiaLow := na
+    londonHigh := na
+    londonLow := na
+    lastDayStart := time
+    asiaSessionEnded := false
+    fibsDrawn := false
+
+// Sydney Session
+currentlyInSydney = isInSession(sydneySession)
+
+// Always track Sydney high/low for Fibonacci calculation even if not showing the box
+if currentlyInSydney
+    if not inSydneySession  // Session just started
+        sydneyHigh := high
+        sydneyLow := low
+        sydneyStartTime := time
+        inSydneySession := true
+    else  // Update during session
+        sydneyHigh := math.max(nz(sydneyHigh, high), high)
+        sydneyLow := math.min(nz(sydneyLow, low), low)
+else if inSydneySession  // Session ended
+    inSydneySession := false
+
+// Draw Sydney box only if showSydney is enabled  
+if showSydney
+    if currentlyInSydney and not inSydneySession[1]
+        // Delete old box if exists
+        if not na(sydneyBox)
+            box.delete(sydneyBox)
+        if not na(sydneyLabel)
+            label.delete(sydneyLabel)
+        
+        // Create new box
+        sydneyBox := box.new(bar_index, high, bar_index, low, border_color=color.new(sydneyColor, 20), border_width=boxBorderWidth, bgcolor=sydneyColor)
+        
+        // Create label
+        if showSessionLabels
+            sydneyLabel := label.new(bar_index, high, "Sydney", style=label.style_label_down, color=color.new(sydneyColor, 0), textcolor=textColor, size=getTextSize(textSize))
+    
+    // Update box during session
+    else if currentlyInSydney and inSydneySession
+        if not na(sydneyBox)
+            box.set_right(sydneyBox, bar_index)
+            box.set_top(sydneyBox, sydneyHigh)
+            box.set_bottom(sydneyBox, sydneyLow)
+        
+        if showSessionLabels and not na(sydneyLabel)
+            label.set_x(sydneyLabel, bar_index)
+            label.set_y(sydneyLabel, sydneyHigh)
+
+// Asia Session
+currentlyInAsia = isInSession(asiaSession)
+
+if showAsia
+    // Session just started
+    if currentlyInAsia and not inAsiaSession
+        // Delete old box if exists
+        if not na(asiaBox)
+            box.delete(asiaBox)
+        if not na(asiaLabel)
+            label.delete(asiaLabel)
+        
+        // Create new box
+        asiaBox := box.new(bar_index, high, bar_index, low, border_color=color.new(asiaColor, 20), border_width=boxBorderWidth, bgcolor=asiaColor)
+        
+        // Create label
+        if showSessionLabels
+            asiaLabel := label.new(bar_index, high, "Asia", style=label.style_label_down, color=color.new(asiaColor, 0), textcolor=textColor, size=getTextSize(textSize))
+        
+        asiaHigh := high
+        asiaLow := low
+        asiaStartTime := time
+        inAsiaSession := true
+    
+    // Update box during session
+    else if currentlyInAsia and inAsiaSession
+        asiaHigh := math.max(asiaHigh, high)
+        asiaLow := math.min(asiaLow, low)
+        
+        if not na(asiaBox)
+            box.set_right(asiaBox, bar_index)
+            box.set_top(asiaBox, asiaHigh)
+            box.set_bottom(asiaBox, asiaLow)
+        
+        if showSessionLabels and not na(asiaLabel)
+            label.set_x(asiaLabel, bar_index)
+            label.set_y(asiaLabel, asiaHigh)
+    
+    // Session ended
+    else if not currentlyInAsia and inAsiaSession
+        inAsiaSession := false
+        asiaSessionEnded := true
+
+// Draw Fibonacci retracement after Asia session ends
+if showFibs and asiaSessionEnded and not fibsDrawn and not na(sydneyHigh) and not na(sydneyLow) and not na(asiaHigh) and not na(asiaLow)
+    // Determine trend direction
+    // Uptrend: Asia high > Sydney high
+    // Downtrend: Asia low < Sydney low
+    isUptrend = asiaHigh > sydneyHigh
+    
+    // Calculate fib levels based on trend
+    float startPrice = na
+    float endPrice = na
+    float priceRange = na
+    float fib236Level = na
+    float fib786Level = na
+    float fibNeg236Level = na
+    float fibNeg786Level = na
+    
+    if isUptrend
+        // Uptrend: Draw from Sydney low to Asia high
+        // Retracements are calculated DOWN from the high
+        startPrice := sydneyLow
+        endPrice := asiaHigh
+        priceRange := endPrice - startPrice
+        
+        // In uptrend, retracements go down from the high
+        fib236Level := endPrice - (priceRange * 0.236)
+        fib786Level := endPrice - (priceRange * 0.786)
+        fibNeg236Level := endPrice + (priceRange * 0.236)  // Extension above
+        fibNeg786Level := endPrice + (priceRange * 0.786)  // Extension above
+    else
+        // Downtrend: Draw from Sydney high to Asia low  
+        // Retracements are calculated UP from the low
+        startPrice := sydneyHigh
+        endPrice := asiaLow
+        priceRange := startPrice - endPrice
+        
+        // In downtrend, retracements go up from the low
+        fib236Level := endPrice + (priceRange * 0.236)
+        fib786Level := endPrice + (priceRange * 0.786)
+        fibNeg236Level := endPrice - (priceRange * 0.236)  // Extension below
+        fibNeg786Level := endPrice - (priceRange * 0.786)  // Extension below
+    
+    // Delete old fibs if they exist
+    if not na(fib236Line)
+        line.delete(fib236Line)
+    if not na(fib786Line)
+        line.delete(fib786Line)
+    if not na(fibNeg236Line)
+        line.delete(fibNeg236Line)
+    if not na(fibNeg786Line)
+        line.delete(fibNeg786Line)
+    if not na(fib236Label)
+        label.delete(fib236Label)
+    if not na(fib786Label)
+        label.delete(fib786Label)
+    if not na(fibNeg236Label)
+        label.delete(fibNeg236Label)
+    if not na(fibNeg786Label)
+        label.delete(fibNeg786Label)
+    
+    // Draw fib lines
+    fib236Line := line.new(bar_index, fib236Level, bar_index + 500, fib236Level, color=fibColor, width=fibLineWidth, extend=extend.right)
+    fib786Line := line.new(bar_index, fib786Level, bar_index + 500, fib786Level, color=fibColor, width=fibLineWidth, extend=extend.right)
+    fibNeg236Line := line.new(bar_index, fibNeg236Level, bar_index + 500, fibNeg236Level, color=fibColor, width=fibLineWidth, extend=extend.right)
+    fibNeg786Line := line.new(bar_index, fibNeg786Level, bar_index + 500, fibNeg786Level, color=fibColor, width=fibLineWidth, extend=extend.right)
+    
+    // Draw fib labels if enabled - text only, no background
+    if showFibLabels
+        fib236Label := label.new(bar_index, fib236Level, "0.236", style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
+        fib786Label := label.new(bar_index, fib786Level, "0.786", style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
+        fibNeg236Label := label.new(bar_index, fibNeg236Level, "-0.236", style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
+        fibNeg786Label := label.new(bar_index, fibNeg786Level, "-0.786", style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
+    
+    fibsDrawn := true
+
+// Reset the flag for next session
+if currentlyInAsia
+    asiaSessionEnded := false
+    fibsDrawn := false
+
+// Update fib label positions to keep them at the right edge
+if showFibLabels and fibsDrawn
+    if not na(fib236Label)
+        label.set_x(fib236Label, bar_index + 10)
+    if not na(fib786Label)
+        label.set_x(fib786Label, bar_index + 10)
+    if not na(fibNeg236Label)
+        label.set_x(fibNeg236Label, bar_index + 10)
+    if not na(fibNeg786Label)
+        label.set_x(fibNeg786Label, bar_index + 10)
+
+// London Session
+currentlyInLondon = isInSession(londonSession)
+
+if showLondon
+    // Session just started
+    if currentlyInLondon and not inLondonSession
+        // Delete old box if exists
+        if not na(londonBox)
+            box.delete(londonBox)
+        if not na(londonLabel)
+            label.delete(londonLabel)
+        
+        // Create new box
+        londonBox := box.new(bar_index, high, bar_index, low, border_color=color.new(londonColor, 20), border_width=boxBorderWidth, bgcolor=londonColor)
+        
+        // Create label
+        if showSessionLabels
+            londonLabel := label.new(bar_index, high, "London", style=label.style_label_down, color=color.new(londonColor, 0), textcolor=textColor, size=getTextSize(textSize))
+        
+        londonHigh := high
+        londonLow := low
+        londonStartTime := time
+        inLondonSession := true
+    
+    // Update box during session
+    else if currentlyInLondon and inLondonSession
+        londonHigh := math.max(londonHigh, high)
+        londonLow := math.min(londonLow, low)
+        
+        if not na(londonBox)
+            box.set_right(londonBox, bar_index)
+            box.set_top(londonBox, londonHigh)
+            box.set_bottom(londonBox, londonLow)
+        
+        if showSessionLabels and not na(londonLabel)
+            label.set_x(londonLabel, bar_index)
+            label.set_y(londonLabel, londonHigh)
+    
+    // Session ended
+    else if not currentlyInLondon and inLondonSession
+        inLondonSession := false
+
+// Alert conditions
+alertcondition(currentlyInSydney and not inSydneySession[1], title="Sydney Session Start", message="Sydney session has started")
+alertcondition(currentlyInAsia and not inAsiaSession[1], title="Asia Session Start", message="Asia session has started")
+alertcondition(currentlyInLondon and not inLondonSession[1], title="London Session Start", message="London session has started")
+alertcondition(isNewDayStart, title="New Day Start (6pm ET)", message="New trading day started at 6pm ET")
