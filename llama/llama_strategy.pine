@@ -185,6 +185,14 @@ var int yearlyStart = na
 var int asiaSessionStart = na
 var int londonSessionStart = na
 
+// Initialize start indices on first bar if not set
+if barstate.isfirst
+    prevDayStart := bar_index
+    prevWeekStart := bar_index
+    prevMonthStart := bar_index
+    currentWeekStart := bar_index
+    yearlyStart := bar_index
+
 // Check if we're in a session
 isInSession(sessionTime) =>
     not na(time(timeframe.period, sessionTime, timezone))
@@ -581,31 +589,24 @@ breachCheck(level, lineVar, breached) =>
 drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startBarIndex) =>
     var line localLine = lineVar
     var label localLabel = labelVar
-    var int lineStart = na
     
     if condition and not na(level)
-        // Set start bar index if not already set or if creating new line
-        if na(localLine) or na(lineStart)
-            lineStart := startBarIndex
-        
-        // Delete old line and label if they exist
+        // Update existing line or create new one
         if not na(localLine)
-            line.delete(localLine)
-        if not na(localLabel)
-            label.delete(localLabel)
+            // Just update the right side of existing line
+            line.set_x2(localLine, bar_index + 1)
+        else
+            // Create new line from the start bar index
+            localLine := line.new(startBarIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
         
-        // Create new line with dotted style from the start bar index
-        localLine := line.new(lineStart, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
-        
-        // Create label if enabled
+        // Handle label
         if showLevelLabels
-            futureTime = time + (time - time[1]) * 500
-            localLabel := label.new(futureTime, level, labelText, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
-    
-    // Update label position if it exists
-    if not na(localLabel)
-        futureTime = time + (time - time[1]) * 500
-        label.set_x(localLabel, futureTime)
+            if na(localLabel)
+                futureTime = time + (time - time[1]) * 500
+                localLabel := label.new(futureTime, level, labelText, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
+            else
+                futureTime = time + (time - time[1]) * 500
+                label.set_x(localLabel, futureTime)
     
     [localLine, localLabel]
 
@@ -613,31 +614,24 @@ drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startB
 drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, breached, startBarIndex) =>
     var line localLine = lineVar
     var label localLabel = labelVar
-    var int lineStart = na
     
     if condition and not na(level) and not breached
-        // Set start bar index if not already set or if creating new line
-        if na(localLine) or na(lineStart)
-            lineStart := startBarIndex
-            
-        // Delete old line and label if they exist
+        // Update existing line or create new one
         if not na(localLine)
-            line.delete(localLine)
-        if not na(localLabel)
-            label.delete(localLabel)
+            // Just update the right side of existing line
+            line.set_x2(localLine, bar_index + 1)
+        else
+            // Create new line from the start bar index
+            localLine := line.new(startBarIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
         
-        // Create new line with dotted style from the start bar index
-        localLine := line.new(lineStart, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
-        
-        // Create label if enabled
+        // Handle label
         if showLevelLabels
-            futureTime = time + (time - time[1]) * 500
-            localLabel := label.new(futureTime, level, labelText, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
-    
-    // Update label position if it exists
-    if not na(localLabel) and not breached
-        futureTime = time + (time - time[1]) * 500
-        label.set_x(localLabel, futureTime)
+            if na(localLabel)
+                futureTime = time + (time - time[1]) * 500
+                localLabel := label.new(futureTime, level, labelText, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
+            else
+                futureTime = time + (time - time[1]) * 500
+                label.set_x(localLabel, futureTime)
     
     [localLine, localLabel]
 
@@ -654,6 +648,30 @@ drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText,
 
 // Get yearly data
 [yearlyHighVal, yearlyLowVal] = request.security(syminfo.tickerid, "12M", [high, low], lookahead=barmerge.lookahead_on)
+
+// Track when new periods start
+var float lastPrevDayHigh = na
+var float lastPrevWeekHigh = na
+var float lastPrevMonthHigh = na
+var float lastYearlyHigh = na
+
+// Update start indices when levels change (indicating new period)
+if prevDayHigh != lastPrevDayHigh
+    prevDayStart := bar_index
+    lastPrevDayHigh := prevDayHigh
+
+if prevWeekHigh != lastPrevWeekHigh
+    prevWeekStart := bar_index
+    currentWeekStart := bar_index
+    lastPrevWeekHigh := prevWeekHigh
+
+if prevMonthHigh != lastPrevMonthHigh
+    prevMonthStart := bar_index
+    lastPrevMonthHigh := prevMonthHigh
+
+if yearlyHighVal != lastYearlyHigh
+    yearlyStart := bar_index
+    lastYearlyHigh := yearlyHighVal
 
 // Track True Day Open (midnight ET)
 var float trueDayOpenPrice = na
@@ -672,12 +690,8 @@ if isNewDayStart
     asiaLowBreached := false
     londonHighBreached := false
     londonLowBreached := false
-    // Reset start indices for new day
-    prevDayStart := bar_index
-    prevWeekStart := bar_index
-    prevMonthStart := bar_index
-    currentWeekStart := bar_index
-    yearlyStart := bar_index
+    // Don't reset start indices here - they should maintain their values
+    // Only update if it's a new period (handled separately)
 
 // Draw level lines if enabled
 if showLevels
