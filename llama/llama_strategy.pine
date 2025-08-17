@@ -1,0 +1,1005 @@
+//@version=6
+indicator("Llama Strategy", overlay=true, max_boxes_count=500)
+
+// Input parameters
+showSydney = input.bool(false, "Show Sydney Session", group="Sessions")
+showAsia = input.bool(true, "Show Asia Session", group="Sessions")
+showLondon = input.bool(true, "Show London Session", group="Sessions")
+showSessionLabels = input.bool(true, "Show Session Labels", group="Sessions")
+
+// Session times (in exchange timezone, will convert to ET)
+sydneySession = input.session("1800-0300", "Sydney Session (6pm-3am ET)", group="Session Times")
+asiaSession = input.session("2000-0500", "Asia Session (8pm-5am ET)", group="Session Times")
+londonSession = input.session("0300-0800", "London Session (3am-8am ET)", group="Session Times") 
+
+// Visual settings
+sydneyColor = input.color(color.new(color.yellow, 80), "Sydney Session Color", group="Colors")
+asiaColor = input.color(color.new(color.blue, 80), "Asia Session Color", group="Colors")
+londonColor = input.color(color.new(color.red, 80), "London Session Color", group="Colors")
+fibColor = input.color(color.new(color.rgb(255, 215, 0), 0), "Fibonacci Color", group="Colors")  // Gold color
+boxBorderWidth = input.int(1, "Box Border Width", minval=0, maxval=5, group="Visual")
+textColor = input.color(color.white, "Label Text Color", group="Colors")
+textSize = input.string("normal", "Label Size", options=["tiny", "small", "normal", "large"], group="Visual")
+showFibs = input.bool(true, "Show Fibonacci Retracement", group="Fibonacci")
+fibLineWidth = input.int(1, "Fib Line Width", minval=1, maxval=5, group="Fibonacci")
+showFibLabels = input.bool(true, "Show Fib Level Text", group="Fibonacci")
+
+// Level Lines Settings
+showLevels = input.bool(true, "Show Level Lines", group="Level Lines")
+showCurrentDayOpen = input.bool(true, "Current Day Open", group="Level Lines")
+showTrueDayOpen = input.bool(true, "True Day Open (12am ET)", group="Level Lines")
+
+// Level Line Triads (High/Low/Mid toggles)
+showPrevDayTriad = input.bool(true, "Previous Day Levels", group="Level Lines")
+showPrevDayHL = input.bool(true, "├─ High/Low", group="Level Lines")
+showPrevDayMid = input.bool(true, "└─ 50%", group="Level Lines")
+
+showPrevWeekTriad = input.bool(true, "Previous Week Levels", group="Level Lines")
+showPrevWeekHL = input.bool(true, "├─ High/Low", group="Level Lines")
+showPrevWeekMid = input.bool(true, "└─ 50%", group="Level Lines")
+
+showPrevMonthTriad = input.bool(true, "Previous Month Levels", group="Level Lines")
+showPrevMonthHL = input.bool(true, "├─ High/Low", group="Level Lines")
+showPrevMonthMid = input.bool(true, "└─ 50%", group="Level Lines")
+
+showCurrentWeekTriad = input.bool(true, "Current Week Levels", group="Level Lines")
+showCurrentWeekHL = input.bool(true, "├─ High/Low", group="Level Lines")
+showCurrentWeekMid = input.bool(true, "└─ 50%", group="Level Lines")
+
+showYearlyTriad = input.bool(true, "Yearly Levels", group="Level Lines")
+showYearlyHL = input.bool(true, "├─ High/Low", group="Level Lines")
+showYearlyMid = input.bool(true, "└─ 50%", group="Level Lines")
+
+showAsiaTriad = input.bool(true, "Asia Session Levels", group="Level Lines")
+showAsiaHL = input.bool(true, "└─ High/Low (with breach detection)", group="Level Lines")
+
+showLondonTriad = input.bool(true, "London Session Levels", group="Level Lines")
+showLondonHL = input.bool(true, "└─ High/Low (with breach detection)", group="Level Lines")
+levelLineWidth = input.int(1, "Level Line Width", minval=1, maxval=3, group="Level Lines")
+showLevelLabels = input.bool(true, "Show Level Labels", group="Level Lines")
+labelOffset = input.int(50, "Label Distance from Current Bar", minval=1, maxval=500, group="Level Lines")
+
+// Level Line Colors
+currentDayOpenColor = input.color(color.new(color.teal, 0), "Current Day Open", group="Level Colors")
+trueDayOpenColor = input.color(color.new(color.teal, 0), "True Day Open", group="Level Colors")
+prevDayHighColor = input.color(color.new(color.teal, 0), "Previous Day High", group="Level Colors")
+prevDayLowColor = input.color(color.new(color.teal, 0), "Previous Day Low", group="Level Colors")
+prevDayMidColor = input.color(color.new(color.teal, 0), "Previous Day 50%", group="Level Colors")
+prevWeekHighColor = input.color(color.new(color.teal, 0), "Previous Week High", group="Level Colors")
+prevWeekLowColor = input.color(color.new(color.teal, 0), "Previous Week Low", group="Level Colors")
+prevWeekMidColor = input.color(color.new(color.teal, 0), "Previous Week 50%", group="Level Colors")
+prevMonthHighColor = input.color(color.new(color.teal, 0), "Previous Month High", group="Level Colors")
+prevMonthLowColor = input.color(color.new(color.teal, 0), "Previous Month Low", group="Level Colors")
+prevMonthMidColor = input.color(color.new(color.teal, 0), "Previous Month 50%", group="Level Colors")
+currentWeekHighColor = input.color(color.new(color.teal, 0), "Current Week High", group="Level Colors")
+currentWeekLowColor = input.color(color.new(color.teal, 0), "Current Week Low", group="Level Colors")
+currentWeekMidColor = input.color(color.new(color.teal, 0), "Current Week 50%", group="Level Colors")
+yearlyHighColor = input.color(color.new(color.teal, 0), "Yearly High", group="Level Colors")
+yearlyLowColor = input.color(color.new(color.teal, 0), "Yearly Low", group="Level Colors")
+yearlyMidColor = input.color(color.new(color.teal, 0), "Yearly 50%", group="Level Colors")
+asiaHighColor = input.color(color.new(color.purple, 0), "Asia High", group="Level Colors")
+asiaLowColor = input.color(color.new(color.purple, 0), "Asia Low", group="Level Colors")
+londonHighColor = input.color(color.new(color.purple, 0), "London High", group="Level Colors")
+londonLowColor = input.color(color.new(color.purple, 0), "London Low", group="Level Colors")
+
+// FVG Settings
+showFVG = input.bool(true, "Show Fair Value Gaps", group="Fair Value Gaps")
+fvgBullishColor = input.color(color.new(color.green, 80), "Bullish FVG Color", group="Fair Value Gaps")
+fvgBearishColor = input.color(color.new(color.red, 80), "Bearish FVG Color", group="Fair Value Gaps")
+fvgMidlineColor = input.color(color.new(color.white, 0), "FVG Midpoint Color", group="Fair Value Gaps")
+fvgMidlineWidth = input.int(2, "FVG Midpoint Width", minval=1, maxval=5, group="Fair Value Gaps")
+maxFVGs = input.int(20, "Maximum FVGs to Display", minval=1, maxval=50, group="Fair Value Gaps")
+fvgMinSize = input.float(0.0001, "Minimum FVG Size (in price)", minval=0.0, group="Fair Value Gaps")
+
+// Timezone setting (ET = Eastern Time)
+timezone = "America/New_York"
+
+// Convert text size to Pine Script size
+getTextSize(size) =>
+    switch size
+        "tiny" => size.tiny
+        "small" => size.small
+        "normal" => size.normal
+        "large" => size.large
+        => size.normal
+
+// Session tracking variables
+var box sydneyBox = na
+var box asiaBox = na
+var box londonBox = na
+var float sydneyHigh = na
+var float sydneyLow = na
+var float asiaHigh = na
+var float asiaLow = na
+var float londonHigh = na
+var float londonLow = na
+var int sydneyStartTime = na
+var int asiaStartTime = na
+var int londonStartTime = na
+var bool inSydneySession = false
+var bool inAsiaSession = false
+var bool inLondonSession = false
+var int lastDayStart = na
+var bool asiaSessionEnded = false
+var bool fibsDrawn = false
+
+// Fibonacci lines and labels
+var line fib236Line = na
+var line fib786Line = na
+var line fibNeg236Line = na
+var line fibNeg786Line = na
+var label fib236Label = na
+var label fib786Label = na
+var label fibNeg236Label = na
+var label fibNeg786Label = na
+
+// Level Lines Variables
+var line currentDayOpenLine = na
+var line trueDayOpenLine = na
+var line prevDayHighLine = na
+var line prevDayLowLine = na
+var line prevDayMidLine = na
+var line prevWeekHighLine = na
+var line prevWeekLowLine = na
+var line prevWeekMidLine = na
+var line prevMonthHighLine = na
+var line prevMonthLowLine = na
+var line prevMonthMidLine = na
+var line currentWeekHighLine = na
+var line currentWeekLowLine = na
+var line currentWeekMidLine = na
+var line yearlyHighLine = na
+var line yearlyLowLine = na
+var line yearlyMidLine = na
+var line asiaHighLine = na
+var line asiaLowLine = na
+var line londonHighLine = na
+var line londonLowLine = na
+
+var label currentDayOpenLabel = na
+var label trueDayOpenLabel = na
+var label prevDayHighLabel = na
+var label prevDayLowLabel = na
+var label prevDayMidLabel = na
+var label prevWeekHighLabel = na
+var label prevWeekLowLabel = na
+var label prevWeekMidLabel = na
+var label prevMonthHighLabel = na
+var label prevMonthLowLabel = na
+var label prevMonthMidLabel = na
+var label currentWeekHighLabel = na
+var label currentWeekLowLabel = na
+var label currentWeekMidLabel = na
+var label yearlyHighLabel = na
+var label yearlyLowLabel = na
+var label yearlyMidLabel = na
+var label asiaHighLabel = na
+var label asiaLowLabel = na
+var label londonHighLabel = na
+var label londonLowLabel = na
+
+// Track breach status for Asia and London sessions
+var bool asiaHighBreached = false
+var bool asiaLowBreached = false
+var bool londonHighBreached = false
+var bool londonLowBreached = false
+
+// Track when levels start (bar index)
+var int currentDayOpenStart = na
+var int trueDayOpenStart = na
+var int prevDayStart = na
+var int prevWeekStart = na
+var int prevMonthStart = na
+var int currentWeekStart = na
+var int yearlyStart = na
+var int asiaSessionStart = na
+var int londonSessionStart = na
+
+// FVG tracking - using arrays to manage multiple FVGs
+type FVG
+    box fvgBox
+    line midLine
+    float top
+    float bottom
+    float midpoint
+    bool isBullish
+    bool midpointBreached
+    bool mitigated
+    int startBar
+
+var array<FVG> fvgArray = array.new<FVG>()
+
+// Initialize start indices on first bar if not set
+if barstate.isfirst
+    prevDayStart := bar_index
+    prevWeekStart := bar_index
+    prevMonthStart := bar_index
+    currentWeekStart := bar_index
+    yearlyStart := bar_index
+
+// Check if we're in a session
+isInSession(sessionTime) =>
+    not na(time(timeframe.period, sessionTime, timezone))
+
+// Get current ET hour
+currentHourET = hour(time, timezone)
+currentMinuteET = minute(time, timezone)
+
+// Check if it's 6pm ET (new day start in forex)
+isNewDayStart = currentHourET == 18 and currentMinuteET == 0
+
+// Note: Cannot use function to delete fibs due to Pine Script global variable restrictions
+
+// Delete previous day's boxes, fibs, and level lines at 6pm ET
+if isNewDayStart
+    if not na(sydneyBox)
+        box.delete(sydneyBox)
+        sydneyBox := na
+    if not na(asiaBox)
+        box.delete(asiaBox)
+        asiaBox := na
+    if not na(londonBox)
+        box.delete(londonBox)
+        londonBox := na
+    // Delete fibonacci lines and labels
+    if not na(fib236Line)
+        line.delete(fib236Line)
+        fib236Line := na
+    if not na(fib786Line)
+        line.delete(fib786Line)
+        fib786Line := na
+    if not na(fibNeg236Line)
+        line.delete(fibNeg236Line)
+        fibNeg236Line := na
+    if not na(fibNeg786Line)
+        line.delete(fibNeg786Line)
+        fibNeg786Line := na
+    if not na(fib236Label)
+        label.delete(fib236Label)
+        fib236Label := na
+    if not na(fib786Label)
+        label.delete(fib786Label)
+        fib786Label := na
+    if not na(fibNeg236Label)
+        label.delete(fibNeg236Label)
+        fibNeg236Label := na
+    if not na(fibNeg786Label)
+        label.delete(fibNeg786Label)
+        fibNeg786Label := na
+    // Note: FVGs are NOT cleared at daily reset - they persist until mitigated
+    // Delete level lines and labels
+    if not na(currentDayOpenLine)
+        line.delete(currentDayOpenLine)
+        currentDayOpenLine := na
+    if not na(currentDayOpenLabel)
+        label.delete(currentDayOpenLabel)
+        currentDayOpenLabel := na
+    if not na(trueDayOpenLine)
+        line.delete(trueDayOpenLine)
+        trueDayOpenLine := na
+    if not na(trueDayOpenLabel)
+        label.delete(trueDayOpenLabel)
+        trueDayOpenLabel := na
+    if not na(prevDayHighLine)
+        line.delete(prevDayHighLine)
+        prevDayHighLine := na
+    if not na(prevDayHighLabel)
+        label.delete(prevDayHighLabel)
+        prevDayHighLabel := na
+    if not na(prevDayLowLine)
+        line.delete(prevDayLowLine)
+        prevDayLowLine := na
+    if not na(prevDayLowLabel)
+        label.delete(prevDayLowLabel)
+        prevDayLowLabel := na
+    if not na(prevDayMidLine)
+        line.delete(prevDayMidLine)
+        prevDayMidLine := na
+    if not na(prevDayMidLabel)
+        label.delete(prevDayMidLabel)
+        prevDayMidLabel := na
+    if not na(prevWeekHighLine)
+        line.delete(prevWeekHighLine)
+        prevWeekHighLine := na
+    if not na(prevWeekHighLabel)
+        label.delete(prevWeekHighLabel)
+        prevWeekHighLabel := na
+    if not na(prevWeekLowLine)
+        line.delete(prevWeekLowLine)
+        prevWeekLowLine := na
+    if not na(prevWeekLowLabel)
+        label.delete(prevWeekLowLabel)
+        prevWeekLowLabel := na
+    if not na(prevWeekMidLine)
+        line.delete(prevWeekMidLine)
+        prevWeekMidLine := na
+    if not na(prevWeekMidLabel)
+        label.delete(prevWeekMidLabel)
+        prevWeekMidLabel := na
+    if not na(prevMonthHighLine)
+        line.delete(prevMonthHighLine)
+        prevMonthHighLine := na
+    if not na(prevMonthHighLabel)
+        label.delete(prevMonthHighLabel)
+        prevMonthHighLabel := na
+    if not na(prevMonthLowLine)
+        line.delete(prevMonthLowLine)
+        prevMonthLowLine := na
+    if not na(prevMonthLowLabel)
+        label.delete(prevMonthLowLabel)
+        prevMonthLowLabel := na
+    if not na(prevMonthMidLine)
+        line.delete(prevMonthMidLine)
+        prevMonthMidLine := na
+    if not na(prevMonthMidLabel)
+        label.delete(prevMonthMidLabel)
+        prevMonthMidLabel := na
+    if not na(currentWeekHighLine)
+        line.delete(currentWeekHighLine)
+        currentWeekHighLine := na
+    if not na(currentWeekHighLabel)
+        label.delete(currentWeekHighLabel)
+        currentWeekHighLabel := na
+    if not na(currentWeekLowLine)
+        line.delete(currentWeekLowLine)
+        currentWeekLowLine := na
+    if not na(currentWeekLowLabel)
+        label.delete(currentWeekLowLabel)
+        currentWeekLowLabel := na
+    if not na(currentWeekMidLine)
+        line.delete(currentWeekMidLine)
+        currentWeekMidLine := na
+    if not na(currentWeekMidLabel)
+        label.delete(currentWeekMidLabel)
+        currentWeekMidLabel := na
+    if not na(yearlyHighLine)
+        line.delete(yearlyHighLine)
+        yearlyHighLine := na
+    if not na(yearlyHighLabel)
+        label.delete(yearlyHighLabel)
+        yearlyHighLabel := na
+    if not na(yearlyLowLine)
+        line.delete(yearlyLowLine)
+        yearlyLowLine := na
+    if not na(yearlyLowLabel)
+        label.delete(yearlyLowLabel)
+        yearlyLowLabel := na
+    if not na(yearlyMidLine)
+        line.delete(yearlyMidLine)
+        yearlyMidLine := na
+    if not na(yearlyMidLabel)
+        label.delete(yearlyMidLabel)
+        yearlyMidLabel := na
+    if not na(asiaHighLine)
+        line.delete(asiaHighLine)
+        asiaHighLine := na
+    if not na(asiaHighLabel)
+        label.delete(asiaHighLabel)
+        asiaHighLabel := na
+    if not na(asiaLowLine)
+        line.delete(asiaLowLine)
+        asiaLowLine := na
+    if not na(asiaLowLabel)
+        label.delete(asiaLowLabel)
+        asiaLowLabel := na
+    if not na(londonHighLine)
+        line.delete(londonHighLine)
+        londonHighLine := na
+    if not na(londonHighLabel)
+        label.delete(londonHighLabel)
+        londonHighLabel := na
+    if not na(londonLowLine)
+        line.delete(londonLowLine)
+        londonLowLine := na
+    if not na(londonLowLabel)
+        label.delete(londonLowLabel)
+        londonLowLabel := na
+    sydneyHigh := na
+    sydneyLow := na
+    asiaHigh := na
+    asiaLow := na
+    londonHigh := na
+    londonLow := na
+    lastDayStart := time
+    asiaSessionEnded := false
+    fibsDrawn := false
+
+// Sydney Session
+currentlyInSydney = isInSession(sydneySession)
+
+// Always track Sydney high/low for Fibonacci calculation even if not showing the box
+if currentlyInSydney
+    if not inSydneySession  // Session just started
+        sydneyHigh := high
+        sydneyLow := low
+        sydneyStartTime := time
+        inSydneySession := true
+    else  // Update during session
+        sydneyHigh := math.max(nz(sydneyHigh, high), high)
+        sydneyLow := math.min(nz(sydneyLow, low), low)
+else if inSydneySession  // Session ended
+    inSydneySession := false
+
+// Draw Sydney box only if showSydney is enabled  
+if showSydney
+    if currentlyInSydney and not inSydneySession[1]
+        // Delete old box if exists
+        if not na(sydneyBox)
+            box.delete(sydneyBox)
+        
+        // Create new box with text
+        sydneyBox := box.new(bar_index, high, bar_index, low, border_color=color.new(sydneyColor, 20), border_width=boxBorderWidth, bgcolor=sydneyColor, text=showSessionLabels ? "SYDNEY" : "", text_color=color.new(sydneyColor, 20), text_size=size.normal)
+    
+    // Update box during session
+    else if currentlyInSydney and inSydneySession
+        if not na(sydneyBox)
+            box.set_right(sydneyBox, bar_index)
+            box.set_top(sydneyBox, sydneyHigh)
+            box.set_bottom(sydneyBox, sydneyLow)
+
+// Asia Session
+currentlyInAsia = isInSession(asiaSession)
+
+if showAsia
+    // Session just started
+    if currentlyInAsia and not inAsiaSession
+        // Delete old box if exists
+        if not na(asiaBox)
+            box.delete(asiaBox)
+        
+        // Create new box with text
+        asiaBox := box.new(bar_index, high, bar_index, low, border_color=color.new(asiaColor, 20), border_width=boxBorderWidth, bgcolor=asiaColor, text=showSessionLabels ? "ASIA" : "", text_color=color.new(asiaColor, 20), text_size=size.normal)
+        
+        asiaHigh := high
+        asiaLow := low
+        asiaStartTime := time
+        inAsiaSession := true
+    
+    // Update box during session
+    else if currentlyInAsia and inAsiaSession
+        asiaHigh := math.max(asiaHigh, high)
+        asiaLow := math.min(asiaLow, low)
+        
+        if not na(asiaBox)
+            box.set_right(asiaBox, bar_index)
+            box.set_top(asiaBox, asiaHigh)
+            box.set_bottom(asiaBox, asiaLow)
+    
+    // Session ended
+    else if not currentlyInAsia and inAsiaSession
+        inAsiaSession := false
+        asiaSessionEnded := true
+        asiaSessionStart := bar_index
+
+// Draw Fibonacci retracement after Asia session ends
+if showFibs and asiaSessionEnded and not fibsDrawn and not na(sydneyHigh) and not na(sydneyLow) and not na(asiaHigh) and not na(asiaLow)
+    // Determine trend direction
+    // Uptrend: Asia high > Sydney high
+    // Downtrend: Asia low < Sydney low
+    isUptrend = asiaHigh > sydneyHigh
+    
+    // Calculate fib levels based on trend
+    float startPrice = na
+    float endPrice = na
+    float priceRange = na
+    float fib236Level = na
+    float fib786Level = na
+    float fibNeg236Level = na
+    float fibNeg786Level = na
+    
+    if isUptrend
+        // Uptrend: Draw from Sydney low to Asia high
+        // Retracements are calculated DOWN from the high
+        startPrice := sydneyLow
+        endPrice := asiaHigh
+        priceRange := endPrice - startPrice
+        
+        // In uptrend, retracements go down from the high
+        fib236Level := endPrice - (priceRange * 0.236)
+        fib786Level := endPrice - (priceRange * 0.786)
+        fibNeg236Level := endPrice + (priceRange * 0.236)  // Extension above
+        fibNeg786Level := endPrice + (priceRange * 0.786)  // Extension above
+    else
+        // Downtrend: Draw from Sydney high to Asia low  
+        // Retracements are calculated UP from the low
+        startPrice := sydneyHigh
+        endPrice := asiaLow
+        priceRange := startPrice - endPrice
+        
+        // In downtrend, retracements go up from the low
+        fib236Level := endPrice + (priceRange * 0.236)
+        fib786Level := endPrice + (priceRange * 0.786)
+        fibNeg236Level := endPrice - (priceRange * 0.236)  // Extension below
+        fibNeg786Level := endPrice - (priceRange * 0.786)  // Extension below
+    
+    // Delete old fibs if they exist
+    if not na(fib236Line)
+        line.delete(fib236Line)
+    if not na(fib786Line)
+        line.delete(fib786Line)
+    if not na(fibNeg236Line)
+        line.delete(fibNeg236Line)
+    if not na(fibNeg786Line)
+        line.delete(fibNeg786Line)
+    if not na(fib236Label)
+        label.delete(fib236Label)
+    if not na(fib786Label)
+        label.delete(fib786Label)
+    if not na(fibNeg236Label)
+        label.delete(fibNeg236Label)
+    if not na(fibNeg786Label)
+        label.delete(fibNeg786Label)
+    
+    // Draw fib lines that extend infinitely to the right
+    fib236Line := line.new(bar_index, fib236Level, bar_index + 1, fib236Level, color=fibColor, width=fibLineWidth, extend=extend.right)
+    fib786Line := line.new(bar_index, fib786Level, bar_index + 1, fib786Level, color=fibColor, width=fibLineWidth, extend=extend.right)
+    fibNeg236Line := line.new(bar_index, fibNeg236Level, bar_index + 1, fibNeg236Level, color=fibColor, width=fibLineWidth, extend=extend.right)
+    fibNeg786Line := line.new(bar_index, fibNeg786Level, bar_index + 1, fibNeg786Level, color=fibColor, width=fibLineWidth, extend=extend.right)
+    
+    // Add text labels that will stay at the visible right edge
+    if showFibLabels
+        // Calculate a much further future time for label positioning
+        futureTime = time + (time - time[1]) * labelOffset  // 500 bars into the future for better visibility
+        fib236Label := label.new(futureTime, fib236Level, "0.236 Overnight Retracement", xloc=xloc.bar_time, style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
+        fib786Label := label.new(futureTime, fib786Level, "0.786 Overnight Retracement", xloc=xloc.bar_time, style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
+        fibNeg236Label := label.new(futureTime, fibNeg236Level, "-0.236 Overnight Trend Extension", xloc=xloc.bar_time, style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
+        fibNeg786Label := label.new(futureTime, fibNeg786Level, "-0.786 Overnight Trend Extension", xloc=xloc.bar_time, style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
+    
+    fibsDrawn := true
+
+// Reset the flag for next session
+if currentlyInAsia
+    asiaSessionEnded := false
+    fibsDrawn := false
+
+// Update label positions to stay visible at the right edge
+if fibsDrawn and showFibLabels
+    // Calculate future time for labels to stay far ahead
+    futureTime = time + (time - time[1]) * labelOffset  // Keep labels at user-defined distance
+    
+    if not na(fib236Label)
+        label.set_x(fib236Label, futureTime)
+    if not na(fib786Label)
+        label.set_x(fib786Label, futureTime)
+    if not na(fibNeg236Label)
+        label.set_x(fibNeg236Label, futureTime)
+    if not na(fibNeg786Label)
+        label.set_x(fibNeg786Label, futureTime)
+
+// London Session
+currentlyInLondon = isInSession(londonSession)
+
+if showLondon
+    // Session just started
+    if currentlyInLondon and not inLondonSession
+        // Delete old box if exists
+        if not na(londonBox)
+            box.delete(londonBox)
+        
+        // Create new box with text
+        londonBox := box.new(bar_index, high, bar_index, low, border_color=color.new(londonColor, 20), border_width=boxBorderWidth, bgcolor=londonColor, text=showSessionLabels ? "LONDON" : "", text_color=color.new(londonColor, 20), text_size=size.normal)
+        
+        londonHigh := high
+        londonLow := low
+        londonStartTime := time
+        inLondonSession := true
+    
+    // Update box during session
+    else if currentlyInLondon and inLondonSession
+        londonHigh := math.max(londonHigh, high)
+        londonLow := math.min(londonLow, low)
+        
+        if not na(londonBox)
+            box.set_right(londonBox, bar_index)
+            box.set_top(londonBox, londonHigh)
+            box.set_bottom(londonBox, londonLow)
+    
+    // Session ended
+    else if not currentlyInLondon and inLondonSession
+        inLondonSession := false
+        londonSessionStart := bar_index
+
+// Function to check if price has breached a level
+breachCheck(level, lineVar, breached) =>
+    result = breached
+    if not na(level) and not breached
+        if (low[1] > level and low <= level) or (high[1] < level and high >= level)
+            result := true
+            if not na(lineVar)
+                line.set_x2(lineVar, bar_index)
+                line.set_extend(lineVar, extend.none)
+    result
+
+// Function to draw or update a level line without breach detection
+drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startBarIndex) =>
+    var line localLine = lineVar
+    var label localLabel = labelVar
+    
+    if condition and not na(level)
+        // Limit how far back we can draw (Pine Script limitation)
+        maxBarsBack = 500
+        safeStartIndex = math.max(startBarIndex, bar_index - maxBarsBack + 1)
+        
+        // Update existing line or create new one
+        if not na(localLine)
+            // Just update the right side of existing line
+            line.set_x2(localLine, bar_index + 1)
+        else
+            // Create new line from the safe start bar index
+            localLine := line.new(safeStartIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
+        
+        // Handle label with price
+        if showLevelLabels
+            labelWithPrice = labelText + " (" + str.tostring(level, "#.#####") + ")"
+            if na(localLabel)
+                futureTime = time + (time - time[1]) * labelOffset
+                localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
+            else
+                futureTime = time + (time - time[1]) * labelOffset
+                label.set_x(localLabel, futureTime)
+                label.set_text(localLabel, labelWithPrice)
+    
+    [localLine, localLabel]
+
+// Function to draw session level line with breach detection
+drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, breached, startBarIndex) =>
+    var line localLine = lineVar
+    var label localLabel = labelVar
+    
+    if condition and not na(level)
+        // Limit how far back we can draw (Pine Script limitation)
+        maxBarsBack = 500
+        safeStartIndex = math.max(startBarIndex, bar_index - maxBarsBack + 1)
+        
+        if not breached
+            // Update existing line or create new one
+            if not na(localLine)
+                // Just update the right side of existing line
+                line.set_x2(localLine, bar_index + 1)
+            else
+                // Create new line from the safe start bar index
+                localLine := line.new(safeStartIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
+            
+            // Handle label with price
+            if showLevelLabels
+                labelWithPrice = labelText + " (" + str.tostring(level, format.price) + ")"
+                if na(localLabel)
+                    futureTime = time + (time - time[1]) * labelOffset
+                    localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
+                else
+                    futureTime = time + (time - time[1]) * labelOffset
+                    label.set_x(localLabel, futureTime)
+                    label.set_text(localLabel, labelWithPrice)
+        else
+            // Line has been breached - keep label but change color to gray
+            if showLevelLabels
+                labelWithPrice = labelText + " (" + str.tostring(level, format.price) + ")"
+                if na(localLabel)
+                    futureTime = time + (time - time[1]) * labelOffset
+                    localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=color.gray, size=getTextSize(textSize))
+                else
+                    futureTime = time + (time - time[1]) * labelOffset
+                    label.set_x(localLabel, futureTime)
+                    label.set_text(localLabel, labelWithPrice)
+                    label.set_textcolor(localLabel, color.gray)
+    
+    [localLine, localLabel]
+
+// Get daily data
+[dailyHigh, dailyLow, dailyOpen] = request.security(syminfo.tickerid, "D", [high, low, open], lookahead=barmerge.lookahead_on)
+[prevDayHigh, prevDayLow] = request.security(syminfo.tickerid, "D", [high[1], low[1]], lookahead=barmerge.lookahead_on)
+
+// Get weekly data
+[weeklyHigh, weeklyLow] = request.security(syminfo.tickerid, "W", [high, low], lookahead=barmerge.lookahead_on)
+[prevWeekHigh, prevWeekLow] = request.security(syminfo.tickerid, "W", [high[1], low[1]], lookahead=barmerge.lookahead_on)
+
+// Get monthly data
+[prevMonthHigh, prevMonthLow] = request.security(syminfo.tickerid, "M", [high[1], low[1]], lookahead=barmerge.lookahead_on)
+
+// Get yearly data
+[yearlyHighVal, yearlyLowVal] = request.security(syminfo.tickerid, "12M", [high, low], lookahead=barmerge.lookahead_on)
+
+// Track when new periods start
+var float lastPrevDayHigh = na
+var float lastPrevWeekHigh = na
+var float lastPrevMonthHigh = na
+var float lastYearlyHigh = na
+
+// Update start indices when levels change (indicating new period)
+if prevDayHigh != lastPrevDayHigh
+    prevDayStart := bar_index
+    lastPrevDayHigh := prevDayHigh
+
+if prevWeekHigh != lastPrevWeekHigh
+    prevWeekStart := bar_index
+    currentWeekStart := bar_index
+    lastPrevWeekHigh := prevWeekHigh
+
+if prevMonthHigh != lastPrevMonthHigh
+    prevMonthStart := bar_index
+    lastPrevMonthHigh := prevMonthHigh
+
+if yearlyHighVal != lastYearlyHigh
+    yearlyStart := bar_index
+    lastYearlyHigh := yearlyHighVal
+
+// Track True Day Open (midnight ET)
+var float trueDayOpenPrice = na
+isMidnightET = currentHourET == 0 and currentMinuteET == 0
+if isMidnightET
+    trueDayOpenPrice := open
+    trueDayOpenStart := bar_index
+
+// Track Current Day Open (6pm ET)
+var float currentDayOpenPrice = na
+if isNewDayStart
+    currentDayOpenPrice := open
+    currentDayOpenStart := bar_index
+    // Reset session breach flags at new day
+    asiaHighBreached := false
+    asiaLowBreached := false
+    londonHighBreached := false
+    londonLowBreached := false
+    // Don't reset start indices here - they should maintain their values
+    // Only update if it's a new period (handled separately)
+
+// Draw level lines if enabled
+if showLevels
+    // Current Day Open (6pm ET)
+    if showCurrentDayOpen and not na(currentDayOpenPrice)
+        [cdoLine, cdoLabel] = drawLevelLine(true, currentDayOpenPrice, currentDayOpenLine, currentDayOpenLabel, currentDayOpenColor, "Current Day Open", nz(currentDayOpenStart, bar_index))
+        currentDayOpenLine := cdoLine
+        currentDayOpenLabel := cdoLabel
+    
+    // True Day Open (12am ET)
+    if showTrueDayOpen and not na(trueDayOpenPrice)
+        [tdoLine, tdoLabel] = drawLevelLine(true, trueDayOpenPrice, trueDayOpenLine, trueDayOpenLabel, trueDayOpenColor, "True Day Open", nz(trueDayOpenStart, bar_index))
+        trueDayOpenLine := tdoLine
+        trueDayOpenLabel := tdoLabel
+    
+    // Previous Day High/Low/Mid
+    if showPrevDayTriad
+        if showPrevDayHL
+            if not na(prevDayHigh)
+                [pdhLine, pdhLabel] = drawLevelLine(true, prevDayHigh, prevDayHighLine, prevDayHighLabel, prevDayHighColor, "Previous Day High", nz(prevDayStart, bar_index))
+                prevDayHighLine := pdhLine
+                prevDayHighLabel := pdhLabel
+            
+            if not na(prevDayLow)
+                [pdlLine, pdlLabel] = drawLevelLine(true, prevDayLow, prevDayLowLine, prevDayLowLabel, prevDayLowColor, "Previous Day Low", nz(prevDayStart, bar_index))
+                prevDayLowLine := pdlLine
+                prevDayLowLabel := pdlLabel
+        
+        if showPrevDayMid and not na(prevDayHigh) and not na(prevDayLow)
+            prevDayMidPrice = (prevDayHigh + prevDayLow) / 2
+            [pdmLine, pdmLabel] = drawLevelLine(true, prevDayMidPrice, prevDayMidLine, prevDayMidLabel, prevDayMidColor, "Previous Day 50%", nz(prevDayStart, bar_index))
+            prevDayMidLine := pdmLine
+            prevDayMidLabel := pdmLabel
+    
+    // Previous Week High/Low/Mid
+    if showPrevWeekTriad
+        if showPrevWeekHL
+            if not na(prevWeekHigh)
+                [pwhLine, pwhLabel] = drawLevelLine(true, prevWeekHigh, prevWeekHighLine, prevWeekHighLabel, prevWeekHighColor, "Previous Week High", nz(prevWeekStart, bar_index))
+                prevWeekHighLine := pwhLine
+                prevWeekHighLabel := pwhLabel
+            
+            if not na(prevWeekLow)
+                [pwlLine, pwlLabel] = drawLevelLine(true, prevWeekLow, prevWeekLowLine, prevWeekLowLabel, prevWeekLowColor, "Previous Week Low", nz(prevWeekStart, bar_index))
+                prevWeekLowLine := pwlLine
+                prevWeekLowLabel := pwlLabel
+        
+        if showPrevWeekMid and not na(prevWeekHigh) and not na(prevWeekLow)
+            prevWeekMidPrice = (prevWeekHigh + prevWeekLow) / 2
+            [pwmLine, pwmLabel] = drawLevelLine(true, prevWeekMidPrice, prevWeekMidLine, prevWeekMidLabel, prevWeekMidColor, "Previous Week 50%", nz(prevWeekStart, bar_index))
+            prevWeekMidLine := pwmLine
+            prevWeekMidLabel := pwmLabel
+    
+    // Previous Month High/Low/Mid
+    if showPrevMonthTriad
+        if showPrevMonthHL
+            if not na(prevMonthHigh)
+                [pmhLine, pmhLabel] = drawLevelLine(true, prevMonthHigh, prevMonthHighLine, prevMonthHighLabel, prevMonthHighColor, "Previous Month High", nz(prevMonthStart, bar_index))
+                prevMonthHighLine := pmhLine
+                prevMonthHighLabel := pmhLabel
+            
+            if not na(prevMonthLow)
+                [pmlLine, pmlLabel] = drawLevelLine(true, prevMonthLow, prevMonthLowLine, prevMonthLowLabel, prevMonthLowColor, "Previous Month Low", nz(prevMonthStart, bar_index))
+                prevMonthLowLine := pmlLine
+                prevMonthLowLabel := pmlLabel
+        
+        if showPrevMonthMid and not na(prevMonthHigh) and not na(prevMonthLow)
+            prevMonthMidPrice = (prevMonthHigh + prevMonthLow) / 2
+            [pmmLine, pmmLabel] = drawLevelLine(true, prevMonthMidPrice, prevMonthMidLine, prevMonthMidLabel, prevMonthMidColor, "Previous Month 50%", nz(prevMonthStart, bar_index))
+            prevMonthMidLine := pmmLine
+            prevMonthMidLabel := pmmLabel
+    
+    // Current Week High/Low/Mid
+    if showCurrentWeekTriad
+        if showCurrentWeekHL
+            if not na(weeklyHigh)
+                [cwhLine, cwhLabel] = drawLevelLine(true, weeklyHigh, currentWeekHighLine, currentWeekHighLabel, currentWeekHighColor, "Current Week High", nz(currentWeekStart, bar_index))
+                currentWeekHighLine := cwhLine
+                currentWeekHighLabel := cwhLabel
+            
+            if not na(weeklyLow)
+                [cwlLine, cwlLabel] = drawLevelLine(true, weeklyLow, currentWeekLowLine, currentWeekLowLabel, currentWeekLowColor, "Current Week Low", nz(currentWeekStart, bar_index))
+                currentWeekLowLine := cwlLine
+                currentWeekLowLabel := cwlLabel
+        
+        if showCurrentWeekMid and not na(weeklyHigh) and not na(weeklyLow)
+            currentWeekMidPrice = (weeklyHigh + weeklyLow) / 2
+            [cwmLine, cwmLabel] = drawLevelLine(true, currentWeekMidPrice, currentWeekMidLine, currentWeekMidLabel, currentWeekMidColor, "Current Week 50%", nz(currentWeekStart, bar_index))
+            currentWeekMidLine := cwmLine
+            currentWeekMidLabel := cwmLabel
+    
+    // Yearly High/Low/Mid
+    if showYearlyTriad
+        if showYearlyHL
+            if not na(yearlyHighVal)
+                [yhLine, yhLabel] = drawLevelLine(true, yearlyHighVal, yearlyHighLine, yearlyHighLabel, yearlyHighColor, "Yearly High", nz(yearlyStart, bar_index))
+                yearlyHighLine := yhLine
+                yearlyHighLabel := yhLabel
+            
+            if not na(yearlyLowVal)
+                [ylLine, ylLabel] = drawLevelLine(true, yearlyLowVal, yearlyLowLine, yearlyLowLabel, yearlyLowColor, "Yearly Low", nz(yearlyStart, bar_index))
+                yearlyLowLine := ylLine
+                yearlyLowLabel := ylLabel
+        
+        if showYearlyMid and not na(yearlyHighVal) and not na(yearlyLowVal)
+            yearlyMidPrice = (yearlyHighVal + yearlyLowVal) / 2
+            [ymLine, ymLabel] = drawLevelLine(true, yearlyMidPrice, yearlyMidLine, yearlyMidLabel, yearlyMidColor, "Yearly 50%", nz(yearlyStart, bar_index))
+            yearlyMidLine := ymLine
+            yearlyMidLabel := ymLabel
+    
+    // Asia Session High/Low (with breach detection)
+    if showAsiaTriad and showAsiaHL and not na(asiaHigh) and not na(asiaLow) and not inAsiaSession
+        asiaHighBreached := breachCheck(asiaHigh, asiaHighLine, asiaHighBreached)
+        [ahLine, ahLabel] = drawSessionLevelLine(true, asiaHigh, asiaHighLine, asiaHighLabel, asiaHighColor, "Asia High", asiaHighBreached, nz(asiaSessionStart, bar_index))
+        asiaHighLine := ahLine
+        asiaHighLabel := ahLabel
+        
+        asiaLowBreached := breachCheck(asiaLow, asiaLowLine, asiaLowBreached)
+        [alLine, alLabel] = drawSessionLevelLine(true, asiaLow, asiaLowLine, asiaLowLabel, asiaLowColor, "Asia Low", asiaLowBreached, nz(asiaSessionStart, bar_index))
+        asiaLowLine := alLine
+        asiaLowLabel := alLabel
+    
+    // London Session High/Low (with breach detection)
+    if showLondonTriad and showLondonHL and not na(londonHigh) and not na(londonLow) and not inLondonSession
+        londonHighBreached := breachCheck(londonHigh, londonHighLine, londonHighBreached)
+        [lhLine, lhLabel] = drawSessionLevelLine(true, londonHigh, londonHighLine, londonHighLabel, londonHighColor, "London High", londonHighBreached, nz(londonSessionStart, bar_index))
+        londonHighLine := lhLine
+        londonHighLabel := lhLabel
+        
+        londonLowBreached := breachCheck(londonLow, londonLowLine, londonLowBreached)
+        [llLine, llLabel] = drawSessionLevelLine(true, londonLow, londonLowLine, londonLowLabel, londonLowColor, "London Low", londonLowBreached, nz(londonSessionStart, bar_index))
+        londonLowLine := llLine
+        londonLowLabel := llLabel
+
+// =========================
+// Fair Value Gap Detection (15-minute timeframe)
+// =========================
+// Get 15-minute data for FVG detection
+[fvg_high, fvg_low, fvg_close] = request.security(syminfo.tickerid, "15", [high, low, close], lookahead=barmerge.lookahead_off)
+[fvg_high1, fvg_low1] = request.security(syminfo.tickerid, "15", [high[1], low[1]], lookahead=barmerge.lookahead_off)
+[fvg_high2, fvg_low2] = request.security(syminfo.tickerid, "15", [high[2], low[2]], lookahead=barmerge.lookahead_off)
+
+// Check if we have a new 15-minute bar
+is15MinBar = ta.change(time("15")) != 0
+
+if showFVG and is15MinBar
+    // Detect FVG on 15-minute timeframe - requires 3 candles
+    if not na(fvg_high2) and not na(fvg_low2) and not na(fvg_high1) and not na(fvg_low1)
+        // Bullish FVG: Gap up between candle[2] high and candle[0] low
+        bullishGapTop = fvg_low
+        bullishGapBottom = fvg_high2
+        bullishGapSize = bullishGapTop - bullishGapBottom
+        
+        // Bearish FVG: Gap down between candle[2] low and candle[0] high
+        bearishGapTop = fvg_low2
+        bearishGapBottom = fvg_high
+        bearishGapSize = bearishGapTop - bearishGapBottom
+        
+        // Check for Bullish FVG
+        if bullishGapSize > fvgMinSize and bullishGapBottom < bullishGapTop
+            // Create new FVG object
+            newFVG = FVG.new()
+            newFVG.top := bullishGapTop
+            newFVG.bottom := bullishGapBottom
+            newFVG.midpoint := (bullishGapTop + bullishGapBottom) / 2
+            newFVG.isBullish := true
+            newFVG.midpointBreached := false
+            newFVG.mitigated := false
+            newFVG.startBar := bar_index
+            
+            // Create box and midline
+            newFVG.fvgBox := box.new(bar_index, bullishGapTop, bar_index + 1, bullishGapBottom, bgcolor=fvgBullishColor, border_color=na, extend=extend.right)
+            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, color=fvgMidlineColor, width=fvgMidlineWidth, style=line.style_solid, extend=extend.right)
+            
+            // Add to array (manage max count)
+            if array.size(fvgArray) >= maxFVGs
+                oldestFVG = array.shift(fvgArray)
+                box.delete(oldestFVG.fvgBox)
+                line.delete(oldestFVG.midLine)
+            array.push(fvgArray, newFVG)
+        
+        // Check for Bearish FVG
+        else if bearishGapSize > fvgMinSize and bearishGapBottom < bearishGapTop
+            // Create new FVG object
+            newFVG = FVG.new()
+            newFVG.top := bearishGapTop
+            newFVG.bottom := bearishGapBottom
+            newFVG.midpoint := (bearishGapTop + bearishGapBottom) / 2
+            newFVG.isBullish := false
+            newFVG.midpointBreached := false
+            newFVG.mitigated := false
+            newFVG.startBar := bar_index
+            
+            // Create box and midline
+            newFVG.fvgBox := box.new(bar_index, bearishGapTop, bar_index + 1, bearishGapBottom, bgcolor=fvgBearishColor, border_color=na, extend=extend.right)
+            newFVG.midLine := line.new(bar_index, newFVG.midpoint, bar_index + 1, newFVG.midpoint, color=fvgMidlineColor, width=fvgMidlineWidth, style=line.style_solid, extend=extend.right)
+            
+            // Add to array (manage max count)
+            if array.size(fvgArray) >= maxFVGs
+                oldestFVG = array.shift(fvgArray)
+                box.delete(oldestFVG.fvgBox)
+                line.delete(oldestFVG.midLine)
+            array.push(fvgArray, newFVG)
+    
+    // Update existing FVGs for mitigation and midpoint breach
+    // Create a temporary array to track FVGs to remove
+    var array<int> toRemove = array.new<int>()
+    array.clear(toRemove)
+    
+    if array.size(fvgArray) > 0
+        for i = 0 to array.size(fvgArray) - 1
+            currentFVG = array.get(fvgArray, i)
+            
+            if not currentFVG.mitigated
+                // First check for midpoint breach (stop extending to the right)
+                if not currentFVG.midpointBreached
+                    if currentFVG.isBullish
+                        // Bullish FVG midpoint breached when price goes below midpoint
+                        if low <= currentFVG.midpoint
+                            currentFVG.midpointBreached := true
+                            box.set_extend(currentFVG.fvgBox, extend.none)
+                            box.set_right(currentFVG.fvgBox, bar_index)
+                            line.set_extend(currentFVG.midLine, extend.none)
+                            line.set_x2(currentFVG.midLine, bar_index)
+                    else
+                        // Bearish FVG midpoint breached when price goes above midpoint
+                        if high >= currentFVG.midpoint
+                            currentFVG.midpointBreached := true
+                            box.set_extend(currentFVG.fvgBox, extend.none)
+                            box.set_right(currentFVG.fvgBox, bar_index)
+                            line.set_extend(currentFVG.midLine, extend.none)
+                            line.set_x2(currentFVG.midLine, bar_index)
+                // Note: If midpoint was already breached, we don't update the box anymore
+                // The box stays frozen at the breach point
+                
+                // Then check for full mitigation (price completely passes through the entire gap)
+                if currentFVG.isBullish
+                    // Bullish FVG is mitigated when price trades below the bottom
+                    if low < currentFVG.bottom
+                        currentFVG.mitigated := true
+                        box.delete(currentFVG.fvgBox)
+                        line.delete(currentFVG.midLine)
+                        array.push(toRemove, i)
+                else
+                    // Bearish FVG is mitigated when price trades above the top
+                    if high > currentFVG.top
+                        currentFVG.mitigated := true
+                        box.delete(currentFVG.fvgBox)
+                        line.delete(currentFVG.midLine)
+                        array.push(toRemove, i)
+    
+    // Remove mitigated FVGs from the array (in reverse order)
+    if array.size(toRemove) > 0
+        for j = array.size(toRemove) - 1 to 0
+            array.remove(fvgArray, array.get(toRemove, j))
+
+// Alert conditions
+alertcondition(currentlyInSydney and not inSydneySession[1], title="Sydney Session Start", message="Sydney session has started")
+alertcondition(currentlyInAsia and not inAsiaSession[1], title="Asia Session Start", message="Asia session has started")
+alertcondition(currentlyInLondon and not inLondonSession[1], title="London Session Start", message="London session has started")
+alertcondition(isNewDayStart, title="New Day Start (6pm ET)", message="New trading day started at 6pm ET")
