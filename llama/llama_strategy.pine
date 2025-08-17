@@ -604,14 +604,16 @@ drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startB
             // Create new line from the safe start bar index
             localLine := line.new(safeStartIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
         
-        // Handle label
+        // Handle label with price
         if showLevelLabels
+            labelWithPrice = labelText + " (" + str.tostring(level, format.price) + ")"
             if na(localLabel)
                 futureTime = time + (time - time[1]) * labelOffset
-                localLabel := label.new(futureTime, level, labelText, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
+                localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
             else
                 futureTime = time + (time - time[1]) * labelOffset
                 label.set_x(localLabel, futureTime)
+                label.set_text(localLabel, labelWithPrice)
     
     [localLine, localLabel]
 
@@ -620,27 +622,42 @@ drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText,
     var line localLine = lineVar
     var label localLabel = labelVar
     
-    if condition and not na(level) and not breached
+    if condition and not na(level)
         // Limit how far back we can draw (Pine Script limitation)
         maxBarsBack = 500
         safeStartIndex = math.max(startBarIndex, bar_index - maxBarsBack + 1)
         
-        // Update existing line or create new one
-        if not na(localLine)
-            // Just update the right side of existing line
-            line.set_x2(localLine, bar_index + 1)
-        else
-            // Create new line from the safe start bar index
-            localLine := line.new(safeStartIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
-        
-        // Handle label
-        if showLevelLabels
-            if na(localLabel)
-                futureTime = time + (time - time[1]) * labelOffset
-                localLabel := label.new(futureTime, level, labelText, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
+        if not breached
+            // Update existing line or create new one
+            if not na(localLine)
+                // Just update the right side of existing line
+                line.set_x2(localLine, bar_index + 1)
             else
-                futureTime = time + (time - time[1]) * labelOffset
-                label.set_x(localLabel, futureTime)
+                // Create new line from the safe start bar index
+                localLine := line.new(safeStartIndex, level, bar_index + 1, level, color=levelColor, width=levelLineWidth, style=line.style_dotted, extend=extend.right)
+            
+            // Handle label with price
+            if showLevelLabels
+                labelWithPrice = labelText + " (" + str.tostring(level, format.price) + ")"
+                if na(localLabel)
+                    futureTime = time + (time - time[1]) * labelOffset
+                    localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=levelColor, size=getTextSize(textSize))
+                else
+                    futureTime = time + (time - time[1]) * labelOffset
+                    label.set_x(localLabel, futureTime)
+                    label.set_text(localLabel, labelWithPrice)
+        else
+            // Line has been breached - keep label but change color to gray
+            if showLevelLabels
+                labelWithPrice = labelText + " (" + str.tostring(level, format.price) + ")"
+                if na(localLabel)
+                    futureTime = time + (time - time[1]) * labelOffset
+                    localLabel := label.new(futureTime, level, labelWithPrice, xloc=xloc.bar_time, style=label.style_none, textcolor=color.gray, size=getTextSize(textSize))
+                else
+                    futureTime = time + (time - time[1]) * labelOffset
+                    label.set_x(localLabel, futureTime)
+                    label.set_text(localLabel, labelWithPrice)
+                    label.set_textcolor(localLabel, color.gray)
     
     [localLine, localLabel]
 

@@ -1,5 +1,21 @@
 # Llama Strategy Indicator Changelog
 
+## [1.3.0] - 2025-01-17
+
+### Added
+- **Price Values in Labels**: All level labels now display the actual price value in format "Label (Price)"
+- **Configurable Label Distance**: User can adjust how far labels appear from current bar (default: 50)
+- **Gray Breach Labels**: Breached session lines now show gray labels that continue moving with other labels
+
+### Changed
+- **Full Label Names**: Changed from abbreviations to full descriptive names for better readability
+- **Label Management**: Breached lines keep their labels but turn gray instead of disappearing
+- **Line Origins**: All lines now properly extend from their actual origin points in the chart
+
+### Fixed
+- **Bar Index Limitations**: Fixed "too far from current bar" errors by limiting lookback to 500 bars
+- **Label Consistency**: All labels now behave consistently whether breached or active
+
 ## [1.2.0] - 2025-01-17
 
 ### Added
