@@ -22,8 +22,7 @@ textColor = input.color(color.white, "Label Text Color", group="Colors")
 textSize = input.string("normal", "Label Size", options=["tiny", "small", "normal", "large"], group="Visual")
 showFibs = input.bool(true, "Show Fibonacci Retracement", group="Fibonacci")
 fibLineWidth = input.int(1, "Fib Line Width", minval=1, maxval=5, group="Fibonacci")
-showFibLabels = input.bool(true, "Show Fib Level Labels", group="Fibonacci")
-fibLabelOffset = input.int(50, "Fib Label Right Offset", minval=5, maxval=200, group="Fibonacci")
+showFibLabels = input.bool(true, "Show Fib Level Text", group="Fibonacci")
 
 // Timezone setting (ET = Eastern Time)
 timezone = "America/New_York"
@@ -283,18 +282,18 @@ if showFibs and asiaSessionEnded and not fibsDrawn and not na(sydneyHigh) and no
     if not na(fibNeg786Label)
         label.delete(fibNeg786Label)
     
-    // Draw fib lines
+    // Draw fib lines with text
     fib236Line := line.new(bar_index, fib236Level, bar_index + 500, fib236Level, color=fibColor, width=fibLineWidth, extend=extend.right)
     fib786Line := line.new(bar_index, fib786Level, bar_index + 500, fib786Level, color=fibColor, width=fibLineWidth, extend=extend.right)
     fibNeg236Line := line.new(bar_index, fibNeg236Level, bar_index + 500, fibNeg236Level, color=fibColor, width=fibLineWidth, extend=extend.right)
     fibNeg786Line := line.new(bar_index, fibNeg786Level, bar_index + 500, fibNeg786Level, color=fibColor, width=fibLineWidth, extend=extend.right)
     
-    // Draw fib labels if enabled - text only, no background
+    // Add text labels at the right end of lines if enabled
     if showFibLabels
-        fib236Label := label.new(bar_index, fib236Level, "0.236", style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
-        fib786Label := label.new(bar_index, fib786Level, "0.786", style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
-        fibNeg236Label := label.new(bar_index, fibNeg236Level, "-0.236", style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
-        fibNeg786Label := label.new(bar_index, fibNeg786Level, "-0.786", style=label.style_none, textcolor=fibColor, size=getTextSize(textSize))
+        fib236Label := label.new(bar_index + 500, fib236Level, "0.236 Overnight Retracement", style=label.style_label_left, color=color.transparent, textcolor=fibColor, size=getTextSize(textSize))
+        fib786Label := label.new(bar_index + 500, fib786Level, "0.786 Overnight Retracement", style=label.style_label_left, color=color.transparent, textcolor=fibColor, size=getTextSize(textSize))
+        fibNeg236Label := label.new(bar_index + 500, fibNeg236Level, "-0.236 Overnight Retracement", style=label.style_label_left, color=color.transparent, textcolor=fibColor, size=getTextSize(textSize))
+        fibNeg786Label := label.new(bar_index + 500, fibNeg786Level, "-0.786 Overnight Retracement", style=label.style_label_left, color=color.transparent, textcolor=fibColor, size=getTextSize(textSize))
     
     fibsDrawn := true
 
@@ -303,17 +302,28 @@ if currentlyInAsia
     asiaSessionEnded := false
     fibsDrawn := false
 
-// Update fib label positions to keep them at the right edge of visible chart
-if showFibLabels and fibsDrawn
-    // Position labels far to the right using user-defined offset
-    if not na(fib236Label)
-        label.set_x(fib236Label, bar_index + fibLabelOffset)
-    if not na(fib786Label)
-        label.set_x(fib786Label, bar_index + fibLabelOffset)
-    if not na(fibNeg236Label)
-        label.set_x(fibNeg236Label, bar_index + fibLabelOffset)
-    if not na(fibNeg786Label)
-        label.set_x(fibNeg786Label, bar_index + fibLabelOffset)
+// Update fib lines and label positions to extend further right
+if fibsDrawn
+    // Extend the lines further to the right
+    if not na(fib236Line)
+        line.set_x2(fib236Line, bar_index + 500)
+    if not na(fib786Line)
+        line.set_x2(fib786Line, bar_index + 500)
+    if not na(fibNeg236Line)
+        line.set_x2(fibNeg236Line, bar_index + 500)
+    if not na(fibNeg786Line)
+        line.set_x2(fibNeg786Line, bar_index + 500)
+    
+    // Update label positions to stay at the end of lines
+    if showFibLabels
+        if not na(fib236Label)
+            label.set_x(fib236Label, bar_index + 500)
+        if not na(fib786Label)
+            label.set_x(fib786Label, bar_index + 500)
+        if not na(fibNeg236Label)
+            label.set_x(fibNeg236Label, bar_index + 500)
+        if not na(fibNeg786Label)
+            label.set_x(fibNeg786Label, bar_index + 500)
 
 // London Session
 currentlyInLondon = isInSession(londonSession)
