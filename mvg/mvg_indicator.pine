@@ -1,0 +1,258 @@
+//@version=6
+indicator("Max Value Gap (MVG) Indicator", overlay=true, max_boxes_count=500, max_labels_count=500)
+
+// Input parameters
+maxGapsToTrack = input.int(100, "Maximum Gaps to Track", minval=10, maxval=500)
+showTable = input.bool(true, "Show Statistics Table")
+alertOnGapFill = input.bool(true, "Alert on Gap Fill")
+alertOnGapCreate = input.bool(false, "Alert on Gap Creation")
+tableTextSize = input.string("normal", "Table Text Size", options=["tiny", "small", "normal", "large"])
+
+// Colors
+gapColor = input.color(color.new(color.blue, 80), "Gap Rectangle Color")
+tableHeaderColor = input.color(color.new(color.blue, 20), "Table Header Color")
+tableRowColor = input.color(color.new(color.white, 90), "Table Row Color")
+
+// Gap tracking arrays
+var gapBoxes = array.new<box>()
+var gapHighs = array.new<float>()
+var gapLows = array.new<float>()
+var gapStartTimes = array.new<int>()
+var gapDates = array.new<int>()
+var gapFilled = array.new<bool>()
+var gapTypes = array.new<bool>()  // true = gap up, false = gap down
+var gapFillLevels = array.new<float>()  // The price level needed to fill the gap
+var gapBarsToFill = array.new<int>()  // Number of bars it took to fill
+var gapStartBarIndex = array.new<int>()  // Bar index when gap was created
+
+// Statistics tracking (persistent variables)
+var int gapsCreatedToday = 0
+var int gapsFilledToday = 0
+var int totalGapsCreated = 0
+var int totalGapsFilled = 0
+var int sameDayFills = 0
+var int sameDayGaps = 0
+
+// Function to check if we're on an intraday timeframe (excluding daily)
+isValidTimeframe() =>
+    timeframe.isseconds or timeframe.isintraday
+
+// Function to detect gap (excluding overnight gaps)
+detectGap() =>
+    if not isValidTimeframe()
+        false
+    else
+        // Check if current bar and previous bar are from the same day
+        currentDay = dayofmonth(time)
+        previousDay = dayofmonth(time[1])
+        currentMonth = month(time)
+        previousMonth = month(time[1])
+        currentYear = year(time)
+        previousYear = year(time[1])
+        
+        sameDay = currentDay == previousDay and currentMonth == previousMonth and currentYear == previousYear
+        
+        // Only detect gaps within the same trading day
+        if sameDay
+            // Check for gap up or gap down
+            gapUp = low > high[1]
+            gapDown = high < low[1]
+            
+            gapUp or gapDown
+        else
+            false
+
+// Function to get current date (without time)
+getCurrentDate() =>
+    year(time) * 10000 + month(time) * 100 + dayofmonth(time)
+
+// Reset daily statistics at the start of a new day
+currentDate = getCurrentDate()
+var lastDate = currentDate
+if currentDate != lastDate
+    gapsCreatedToday := 0
+    gapsFilledToday := 0
+    lastDate := currentDate
+
+// Detect new gaps
+if detectGap() and barstate.isconfirmed
+    // Determine gap type and boundaries
+    isGapUp = low > high[1]
+    isGapDown = high < low[1]
+    
+    // Declare variables
+    float gapHigh = na
+    float gapLow = na
+    float fillLevel = na
+    
+    // Set gap boundaries and fill level based on gap type
+    // Gap boundaries represent the empty space between bars
+    if isGapUp
+        // Gap up: empty space is between high[1] and low
+        gapHigh := low  // Upper boundary of gap
+        gapLow := high[1]  // Lower boundary of gap
+        fillLevel := high[1]  // Gap fills when price comes back down to previous high
+    else  // Gap down
+        // Gap down: empty space is between high and low[1]
+        gapHigh := low[1]  // Upper boundary of gap
+        gapLow := high  // Lower boundary of gap
+        fillLevel := low[1]  // Gap fills when price comes back up to previous low
+    
+    // Only track if gap is significant
+    if math.abs(gapHigh - gapLow) > 0
+        // Create rectangle for the gap (extending right for unfilled gaps)
+        gapBox = box.new(bar_index - 1, gapHigh, bar_index, gapLow, 
+                         border_color=color.new(color.blue, 50), 
+                         bgcolor=gapColor, 
+                         extend=extend.right)
+        
+        // Store gap information
+        if array.size(gapBoxes) >= maxGapsToTrack
+            // Remove oldest gap (but keep its statistics if it was filled)
+            oldBox = array.shift(gapBoxes)
+            box.delete(oldBox)
+            array.shift(gapHighs)
+            array.shift(gapLows)
+            array.shift(gapStartTimes)
+            array.shift(gapDates)
+            array.shift(gapFilled)
+            array.shift(gapTypes)
+            array.shift(gapFillLevels)
+            array.shift(gapBarsToFill)
+            array.shift(gapStartBarIndex)
+        
+        array.push(gapBoxes, gapBox)
+        array.push(gapHighs, gapHigh)
+        array.push(gapLows, gapLow)
+        array.push(gapStartTimes, time)
+        array.push(gapDates, currentDate)
+        array.push(gapFilled, false)
+        array.push(gapTypes, isGapUp)
+        array.push(gapFillLevels, fillLevel)
+        array.push(gapBarsToFill, 0)
+        array.push(gapStartBarIndex, bar_index)
+        
+        // Update statistics
+        totalGapsCreated := totalGapsCreated + 1
+        gapsCreatedToday := gapsCreatedToday + 1
+        // Only count as same-day gap if created today
+        if currentDate == getCurrentDate()
+            sameDayGaps := sameDayGaps + 1
+        
+        // Alert for gap creation
+        if alertOnGapCreate
+            gapSizePct = isGapUp ? (low - high[1]) / high[1] * 100 : (low[1] - high) / low[1] * 100
+            alertMessage = "Gap " + (isGapUp ? "UP" : "DOWN") + " created: " + str.tostring(gapSizePct, "#.##") + "% | Range: " + str.tostring(gapLow, "#.##") + " - " + str.tostring(gapHigh, "#.##")
+            alert(alertMessage, alert.freq_once_per_bar)
+
+// Extend unfilled gaps and check for gap fills
+if barstate.isconfirmed and array.size(gapBoxes) > 0
+    for i = 0 to array.size(gapBoxes) - 1
+        if i < array.size(gapFilled) and not array.get(gapFilled, i)
+            // Get gap information
+            gapBoxToCheck = array.get(gapBoxes, i)
+            gapIsUp = array.get(gapTypes, i)
+            gapFillLevel = array.get(gapFillLevels, i)
+            gapDateToCheck = array.get(gapDates, i)
+            startBarIdx = array.get(gapStartBarIndex, i)
+            gapHighLevel = array.get(gapHighs, i)
+            gapLowLevel = array.get(gapLows, i)
+            
+            // Check if gap is filled - candlestick must trade THROUGH the gap range
+            gapIsFilled = false
+            
+            if gapIsUp
+                // Gap up is filled when a candlestick trades through the entire gap range
+                // Price must go below the bottom of the gap (high of previous bar)
+                gapIsFilled := low < gapLowLevel
+            else
+                // Gap down is filled when a candlestick trades through the entire gap range  
+                // Price must go above the top of the gap (low of previous bar)
+                gapIsFilled := high > gapHighLevel
+            
+            if gapIsFilled
+                // Calculate bars to fill
+                barsUsedToFill = bar_index - startBarIdx
+                array.set(gapBarsToFill, i, barsUsedToFill)
+                
+                // Mark gap as filled
+                array.set(gapFilled, i, true)
+                
+                // When filled, keep the rectangle at its original position but only 1 bar wide
+                // Get the original start position from when the gap was created
+                gapStartBar = array.get(gapStartBarIndex, i)
+                box.set_left(gapBoxToCheck, gapStartBar - 1)
+                box.set_right(gapBoxToCheck, gapStartBar)
+                box.set_extend(gapBoxToCheck, extend.none)
+                // Change color to show it's been filled
+                box.set_bgcolor(gapBoxToCheck, color.new(color.gray, 90))
+                box.set_border_color(gapBoxToCheck, color.new(color.gray, 70))
+                
+                // Update statistics
+                totalGapsFilled := totalGapsFilled + 1
+                
+                if gapDateToCheck == currentDate
+                    gapsFilledToday := gapsFilledToday + 1
+                    sameDayFills := sameDayFills + 1
+                
+                // Alert for gap fill
+                if alertOnGapFill
+                    gapDirection = gapIsUp ? "UP" : "DOWN"
+                    gapRange = str.tostring(gapLowLevel, "#.##") + " - " + str.tostring(gapHighLevel, "#.##")
+                    fillMessage = "Gap " + gapDirection + " FILLED | Range: " + gapRange + " | Bars to fill: " + str.tostring(barsUsedToFill)
+                    alert(fillMessage, alert.freq_once_per_bar)
+
+// Create statistics table
+if showTable and barstate.islast
+    // Create table
+    statsTable = table.new(position.bottom_right, 3, 4, 
+                           bgcolor=color.new(color.black, 95),
+                           frame_color=color.new(color.gray, 50),
+                           frame_width=1)
+    
+    // Table headers
+    table.cell(statsTable, 0, 0, "Gap Fill Statistics", 
+              text_color=color.white, bgcolor=tableHeaderColor, 
+              text_size=tableTextSize)
+    table.cell(statsTable, 1, 0, "Count", 
+              text_color=color.white, bgcolor=tableHeaderColor, 
+              text_size=tableTextSize)
+    table.cell(statsTable, 2, 0, "% Filled", 
+              text_color=color.white, bgcolor=tableHeaderColor, 
+              text_size=tableTextSize)
+    
+    // Row 1: Gaps filled today
+    todayFillPct = gapsCreatedToday > 0 ? (gapsFilledToday / gapsCreatedToday) * 100 : 0
+    table.cell(statsTable, 0, 1, "Gaps Filled Today", 
+              text_color=color.white, bgcolor=tableRowColor, 
+              text_size=tableTextSize)
+    table.cell(statsTable, 1, 1, str.tostring(gapsFilledToday) + "/" + str.tostring(gapsCreatedToday), 
+              text_color=color.white, bgcolor=tableRowColor, 
+              text_size=tableTextSize)
+    table.cell(statsTable, 2, 1, str.tostring(todayFillPct, "#.##") + "%", 
+              text_color=color.white, bgcolor=tableRowColor, 
+              text_size=tableTextSize)
+    
+    // Row 2: Same day fills
+    sameDayFillPct = sameDayGaps > 0 ? (sameDayFills / sameDayGaps) * 100 : 0
+    table.cell(statsTable, 0, 2, "Gaps Filled Same Day", 
+              text_color=color.white, bgcolor=tableRowColor, 
+              text_size=tableTextSize)
+    table.cell(statsTable, 1, 2, str.tostring(sameDayFills) + "/" + str.tostring(sameDayGaps), 
+              text_color=color.white, bgcolor=tableRowColor, 
+              text_size=tableTextSize)
+    table.cell(statsTable, 2, 2, str.tostring(sameDayFillPct, "#.##") + "%", 
+              text_color=color.white, bgcolor=tableRowColor, 
+              text_size=tableTextSize)
+    
+    // Row 3: Total fills
+    totalFillPct = totalGapsCreated > 0 ? (totalGapsFilled / totalGapsCreated) * 100 : 0
+    table.cell(statsTable, 0, 3, "Gaps Filled Total", 
+              text_color=color.white, bgcolor=tableRowColor, 
+              text_size=tableTextSize)
+    table.cell(statsTable, 1, 3, str.tostring(totalGapsFilled) + "/" + str.tostring(totalGapsCreated), 
+              text_color=color.white, bgcolor=tableRowColor, 
+              text_size=tableTextSize)
+    table.cell(statsTable, 2, 3, str.tostring(totalFillPct, "#.##") + "%", 
+              text_color=color.white, bgcolor=tableRowColor, 
+              text_size=tableTextSize)
