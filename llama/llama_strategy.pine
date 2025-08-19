@@ -207,7 +207,18 @@ type FVG
     bool mitigated
     int startBar
 
+// Type to store level information for overlap detection
+type LevelInfo
+    float price
+    label labelObj
+    string labelText
+    color textColor
+    int baseOffset
+
 var array<FVG> fvgArray = array.new<FVG>()
+
+// Array to store all active levels for overlap detection
+var array<LevelInfo> activeLevels = array.new<LevelInfo>()
 
 // Initialize start indices on first bar if not set
 if barstate.isfirst
@@ -610,6 +621,43 @@ breachCheck(level, lineVar, breached) =>
                 line.set_extend(lineVar, extend.none)
     result
 
+// Function to adjust overlapping labels
+adjustOverlappingLabels() =>
+    // Calculate price range for overlap detection
+    priceRange = ta.highest(high, 100) - ta.lowest(low, 100)
+    overlapThreshold = priceRange * 0.002  // Labels within 0.2% of price range are considered overlapping
+    
+    // Sort levels by price
+    if array.size(activeLevels) > 1
+        for i = 0 to array.size(activeLevels) - 2
+            for j = 0 to array.size(activeLevels) - i - 2
+                level1 = array.get(activeLevels, j)
+                level2 = array.get(activeLevels, j + 1)
+                if level1.price > level2.price
+                    array.set(activeLevels, j, level2)
+                    array.set(activeLevels, j + 1, level1)
+    
+    // Detect and adjust overlapping labels
+    if array.size(activeLevels) > 1
+        prevPrice = array.get(activeLevels, 0).price
+        staggerCount = 0
+        
+        for i = 1 to array.size(activeLevels) - 1
+            currentLevel = array.get(activeLevels, i)
+            
+            // Check if this level overlaps with the previous one
+            if math.abs(currentLevel.price - prevPrice) < overlapThreshold
+                staggerCount += 1
+                // Stagger labels horizontally
+                newX = bar_index + currentLevel.baseOffset + (staggerCount * 10)
+                label.set_x(currentLevel.labelObj, newX)
+            else
+                // Reset stagger for non-overlapping labels
+                staggerCount = 0
+                label.set_x(currentLevel.labelObj, bar_index + currentLevel.baseOffset)
+            
+            prevPrice := currentLevel.price
+
 // Function to draw or update a level line without breach detection
 drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startBarIndex) =>
     var line localLine = lineVar
@@ -641,6 +689,16 @@ drawLevelLine(condition, level, lineVar, labelVar, levelColor, labelText, startB
                 label.set_x(localLabel, labelX)
                 label.set_y(localLabel, level)
                 label.set_text(localLabel, labelWithPrice)
+            
+            // Store level info for overlap detection
+            if not na(localLabel)
+                levelInfo = LevelInfo.new()
+                levelInfo.price := level
+                levelInfo.labelObj := localLabel
+                levelInfo.labelText := labelWithPrice
+                levelInfo.textColor := levelColor
+                levelInfo.baseOffset := labelOffset
+                array.push(activeLevels, levelInfo)
     
     [localLine, localLabel]
 
@@ -673,6 +731,16 @@ drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText,
                     labelX = bar_index + labelOffset
                     label.set_x(localLabel, labelX)
                     label.set_text(localLabel, labelWithPrice)
+                
+                // Store level info for overlap detection
+                if not na(localLabel)
+                    levelInfo = LevelInfo.new()
+                    levelInfo.price := level
+                    levelInfo.labelObj := localLabel
+                    levelInfo.labelText := labelWithPrice
+                    levelInfo.textColor := levelColor
+                    levelInfo.baseOffset := labelOffset
+                    array.push(activeLevels, levelInfo)
         else
             // Line has been breached - keep label but change color to gray
             if showLevelLabels
@@ -685,6 +753,16 @@ drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText,
                     label.set_x(localLabel, labelX)
                     label.set_text(localLabel, labelWithPrice)
                     label.set_textcolor(localLabel, color.gray)
+                
+                // Store level info for overlap detection
+                if not na(localLabel)
+                    levelInfo = LevelInfo.new()
+                    levelInfo.price := level
+                    levelInfo.labelObj := localLabel
+                    levelInfo.labelText := labelWithPrice
+                    levelInfo.textColor := color.gray
+                    levelInfo.baseOffset := labelOffset
+                    array.push(activeLevels, levelInfo)
     
     [localLine, localLabel]
 
@@ -751,6 +829,9 @@ if isNewDayStart
 
 // Draw level lines if enabled
 if showLevels
+    // Clear active levels array for fresh overlap detection
+    array.clear(activeLevels)
+    
     // Current Day Open (6pm ET)
     if showCurrentDayOpen and not na(currentDayOpenPrice)
         [cdoLine, cdoLabel] = drawLevelLine(true, currentDayOpenPrice, currentDayOpenLine, currentDayOpenLabel, currentDayOpenColor, "Current Day Open", nz(currentDayOpenStart, bar_index))
@@ -881,6 +962,10 @@ if showLevels
         [llLine, llLabel] = drawSessionLevelLine(true, londonLow, londonLowLine, londonLowLabel, londonLowColor, "London Low", londonLowBreached, nz(londonSessionStart, bar_index))
         londonLowLine := llLine
         londonLowLabel := llLabel
+    
+    // Adjust overlapping labels after all levels have been drawn
+    if showLevelLabels
+        adjustOverlappingLabels()
 
 // =========================
 // Fair Value Gap Detection (15-minute timeframe)
