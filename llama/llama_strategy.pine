@@ -759,7 +759,7 @@ drawSessionLevelLine(condition, level, lineVar, labelVar, levelColor, labelText,
                     levelInfo = LevelInfo.new()
                     levelInfo.price := level
                     levelInfo.labelObj := localLabel
-                    levelInfo.text := labelWithPrice
+                    levelInfo.labelText := labelWithPrice
                     levelInfo.textColor := color.gray
                     levelInfo.baseOffset := labelOffset
                     array.push(activeLevels, levelInfo)
